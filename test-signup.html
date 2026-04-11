@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Signup</title>
+    <style>
+        body { font-family: Arial; padding: 40px; max-width: 500px; margin: 0 auto; }
+        input, select, button { width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; }
+        button { background: #000; color: #fff; border: none; cursor: pointer; }
+        .error { color: red; margin: 10px 0; }
+        .success { color: green; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>Test Signup</h1>
+    <form id="signupForm">
+        <input type="text" id="fullName" placeholder="Full Name" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="text" id="country" placeholder="Country" required>
+        <input type="password" id="password" placeholder="Password (min 8 chars)" required>
+        <button type="submit">Sign Up</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Signing up...';
+            
+            const data = {
+                fullName: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                country: document.getElementById('country').value,
+                password: document.getElementById('password').value
+            };
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="success">✅ SUCCESS!<br>User ID: ${result.user.id}<br>Email: ${result.user.email}</div>`;
+                    console.log('Full response:', result);
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ ERROR: ${result.error || JSON.stringify(result)}</div>`;
+                    console.error('Error response:', result);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ NETWORK ERROR: ${error.message}</div>`;
+                console.error('Network error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
