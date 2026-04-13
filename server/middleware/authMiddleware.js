@@ -17,6 +17,12 @@ const protect = async (req, res, next) => {
     token = req.headers.authorization.split(' ')[1];
   }
 
+  // Debug logging
+  console.log('=== AUTH MIDDLEWARE DEBUG ===');
+  console.log('Path:', req.path);
+  console.log('Authorization header:', req.headers.authorization ? 'Present' : 'Missing');
+  console.log('Token extracted:', token ? `${token.substring(0, 20)}...` : 'None');
+
   if (!token) {
     logger.warn('Auth attempt without token', {
       ip: req.ip,
@@ -32,14 +38,23 @@ const protect = async (req, res, next) => {
     // Verify token with Supabase
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
+    console.log('Supabase auth result:', {
+      hasUser: !!user,
+      userId: user?.id,
+      email: user?.email,
+      error: error?.message
+    });
+
     if (error || !user) {
       logger.warn('Invalid token attempt', {
         ip: req.ip,
-        error: error?.message
+        error: error?.message,
+        tokenPreview: token.substring(0, 20)
       });
       return res.status(401).json({ 
         error: 'Not authorized, invalid token',
-        code: 'INVALID_TOKEN'
+        code: 'INVALID_TOKEN',
+        details: error?.message
       });
     }
 

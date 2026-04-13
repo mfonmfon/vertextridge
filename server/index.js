@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 const { checkConnection } = require('./config/supabase');
 const Logger = require('./utils/logger');
 
@@ -71,6 +72,28 @@ app.use((req, res, next) => {
 // ═══════════════════════════════════════════════════════════════
 // ROUTES
 // ═══════════════════════════════════════════════════════════════
+
+// Root route - API info
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Vertex Ridge API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      user: '/api/user',
+      trade: '/api/trade',
+      market: '/api/market',
+      finance: '/api/finance',
+      copyTrading: '/api/copy-trading',
+      admin: '/api/admin',
+      notifications: '/api/notifications'
+    },
+    documentation: 'https://github.com/mfonmfon/vertextridge'
+  });
+});
+
 app.use('/api/market', marketRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/onboarding', onboardingRoutes);
@@ -93,6 +116,20 @@ app.get('/api/health', async (req, res) => {
     environment: process.env.NODE_ENV || 'development'
   });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// SERVE STATIC FILES IN PRODUCTION
+// ═══════════════════════════════════════════════════════════════
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the dist directory
+  const distPath = path.join(__dirname, '..', 'dist');
+  app.use(express.static(distPath));
+
+  // Handle client-side routing - send all non-API requests to index.html
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 // ═══════════════════════════════════════════════════════════════
 // ERROR HANDLING

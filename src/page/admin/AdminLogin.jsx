@@ -35,19 +35,38 @@ const AdminLogin = () => {
 
       const data = await response.json();
 
+      console.log('=== LOGIN RESPONSE DEBUG ===');
+      console.log('Response status:', response.status);
+      console.log('Response OK:', response.ok);
+      console.log('Data keys:', Object.keys(data));
+      console.log('Has session:', !!data.session);
+      console.log('Has user:', !!data.user);
+      if (data.session) {
+        console.log('Session keys:', Object.keys(data.session));
+        console.log('Session structure:', {
+          hasAccessToken: !!data.session.access_token,
+          hasRefreshToken: !!data.session.refresh_token,
+          expiresAt: data.session.expires_at,
+          expiresIn: data.session.expires_in,
+          tokenType: data.session.token_type
+        });
+      }
+
       if (!response.ok) {
         throw new Error(data.error || 'Login failed');
       }
 
       // Store session in localStorage
       if (data.session) {
-        console.log('Storing admin session:', data.session);
+        console.log('Storing admin session with keys:', Object.keys(data.session));
         localStorage.setItem('tradz_session', JSON.stringify(data.session));
         localStorage.setItem('tradz_user', JSON.stringify(data.user));
         
         // Verify it was stored
         const stored = localStorage.getItem('tradz_session');
-        console.log('Verified stored session:', stored);
+        const parsedStored = JSON.parse(stored);
+        console.log('Verified stored session keys:', Object.keys(parsedStored));
+        console.log('Verified access_token exists:', !!parsedStored.access_token);
       } else {
         console.error('No session in response:', data);
       }

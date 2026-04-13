@@ -22,6 +22,7 @@ import AdminLogin from '../page/admin/AdminLogin';
 import AdminUsers from '../page/admin/AdminUsers';
 import AdminSettings from '../page/admin/AdminSettings';
 import AdminLogs from '../page/admin/AdminLogs';
+import AdminDebug from '../page/admin/AdminDebug';
 import ProtectedRoute from './ProtectedRoute';
 
 const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
@@ -178,6 +179,10 @@ const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
   {
     path: "/admin/login",
     element: <AdminLogin />,
+  },
+  {
+    path: "/admin/debug",
+    element: <AdminDebug />,
   },
   {
     path: "/admin",

@@ -41,20 +41,32 @@ export const request = async (endpoint, options = {}) => {
 
   // Get token from session if available
   const sessionStr = localStorage.getItem('tradz_session');
+  console.log('=== API CLIENT DEBUG ===');
+  console.log('Endpoint:', endpoint);
+  console.log('Session string exists:', !!sessionStr);
+  
   if (sessionStr) {
     try {
       const session = JSON.parse(sessionStr);
+      console.log('Parsed session keys:', Object.keys(session));
+      console.log('Session structure:', {
+        hasAccessToken: !!session?.access_token,
+        hasRefreshToken: !!session?.refresh_token,
+        expiresAt: session?.expires_at,
+        expiresIn: session?.expires_in
+      });
+      
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
-        console.log('Added auth header with token:', session.access_token.substring(0, 20) + '...');
+        console.log('✓ Added auth header with token:', session.access_token.substring(0, 30) + '...');
       } else {
-        console.warn('Session exists but no access_token:', session);
+        console.warn('✗ Session exists but no access_token. Session:', session);
       }
     } catch (e) {
-      console.warn('Failed to parse session:', e);
+      console.error('✗ Failed to parse session:', e);
     }
   } else {
-    console.warn('No session found in localStorage');
+    console.warn('✗ No session found in localStorage');
   }
 
   const config = {
