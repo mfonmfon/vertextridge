@@ -1,21 +1,53 @@
 import React, { useState } from 'react';
-import { User, Mail, Shield, Wallet, Camera, ChevronRight, LogOut, CreditCard } from 'lucide-react';
+import { User, Mail, Shield, Wallet, Camera, ChevronRight, LogOut, CreditCard, AlertCircle } from 'lucide-react';
 import { Card, Button, Input } from '../../component/shared/UI';
 import { useUser } from '../../context/UserContext';
+import { userService } from '../../services/userService';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
-  const { user, logout, loading } = useUser();
+  const { user, logout, loading, setUser } = useUser();
   const [isEditing, setIsEditing] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
   });
 
-  const handleUpdate = () => {
-    toast.success('Profile update feature coming soon!');
-    setIsEditing(false);
+  const handleUpdate = async () => {
+    try {
+      setLoading(true);
+      const updatedUser = await userService.updateProfile(formData);
+      setUser({ ...user, ...updatedUser.profile });
+      toast.success('Profile updated successfully!');
+      setIsEditing(false);
+    } catch (error) {
+      toast.error(error.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const result = await userService.uploadAvatar(file);
+      setUser({ ...user, avatar_url: result.avatar_url });
+      toast.success('Profile picture updated!');
+    } catch (error) {
+      toast.error(error.message || 'Failed to upload image');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const containerVariants = {
@@ -41,14 +73,21 @@ const Profile = () => {
         <div className="relative">
           <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/20 p-1">
             <img 
-              src={user?.picture || `https://i.pravatar.cc/150?u=${user?.email}`} 
+              src={user?.avatar_url || user?.picture || `https://i.pravatar.cc/150?u=${user?.email}`} 
               alt="Profile" 
               className="w-full h-full object-cover rounded-full"
             />
           </div>
-          <button className="absolute bottom-1 right-1 bg-primary text-dark p-2 rounded-full shadow-lg hover:scale-110 transition-transform">
+          <label className="absolute bottom-1 right-1 bg-primary text-dark p-2 rounded-full shadow-lg hover:scale-110 transition-transform cursor-pointer">
             <Camera className="w-4 h-4" />
-          </button>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+              disabled={uploading}
+            />
+          </label>
         </div>
 
         <div className="flex-1 text-center md:text-left flex flex-col gap-2">

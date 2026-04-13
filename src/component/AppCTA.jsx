@@ -77,7 +77,7 @@ const AppCTA = () => {
           </span>
         </div>
         <p className="text-white/20 text-sm">
-          © 2026 TradZ Marketplace. All rights reserved.
+          © 2026 Vertex Ridge Marketplace. All rights reserved.
         </p>
         <div className="flex items-center gap-8">
           <button className="text-white/40 hover:text-primary text-sm transition-colors">Privacy Policy</button>

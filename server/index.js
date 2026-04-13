@@ -14,6 +14,8 @@ const tradeRoutes = require('./routes/trade');
 const userRoutes = require('./routes/user');
 const financeRoutes = require('./routes/finance');
 const copyTradingRoutes = require('./routes/copyTrading');
+const adminRoutes = require('./routes/admin');
+const notificationRoutes = require('./routes/notification');
 
 const { errorHandler, notFound } = require('./utils/errorHandler');
 
@@ -47,6 +49,14 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Debug middleware to log request bodies
+app.use((req, res, next) => {
+  if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+    logger.debug(`Request body for ${req.path}:`, { body: req.body });
+  }
+  next();
+});
+
 // NO RATE LIMITING FOR DEVELOPMENT - REMOVED
 
 // Request logging middleware
@@ -68,6 +78,8 @@ app.use('/api/trade', tradeRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/copy-trading', copyTradingRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check with database connectivity
 app.get('/api/health', async (req, res) => {

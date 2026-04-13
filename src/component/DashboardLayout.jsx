@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import NotificationCenter from './NotificationCenter';
 
 // ────────────────────────────────────
 // Sidebar Link
@@ -103,10 +104,8 @@ const DashboardLayout = ({ children }) => {
       {/* ═══ Sidebar Desktop ═══ */}
       <aside className="hidden lg:flex flex-col w-72 border-r border-white/5 bg-dark pt-8 flex-shrink-0">
         <div className="px-8 mb-12 flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-extrabold text-dark text-xl">
-            T
-          </div>
-          <span className="text-2xl font-bold tracking-tight">TradZ<span className="text-primary italic">.</span></span>
+          <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-10 h-10 rounded-xl object-cover" />
+          <span className="text-2xl font-bold tracking-tight">Vertex Ridge<span className="text-primary italic">.</span></span>
         </div>
 
         <nav className="flex-1">
@@ -137,10 +136,8 @@ const DashboardLayout = ({ children }) => {
           <div className="flex items-center gap-4">
             {/* Mobile: brand */}
             <div className="lg:hidden flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-extrabold text-dark text-sm">
-                T
-              </div>
-              <span className="text-lg font-bold">TradZ<span className="text-primary italic">.</span></span>
+              <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-8 h-8 rounded-lg object-cover" />
+              <span className="text-lg font-bold">Vertex Ridge<span className="text-primary italic">.</span></span>
             </div>
 
             {/* Desktop: search */}
@@ -156,10 +153,7 @@ const DashboardLayout = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-3 lg:gap-6">
-            <button className="relative w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/40 hover:text-white transition-all">
-              <Bell className="w-4 h-4 lg:w-5 lg:h-5" />
-              <span className="absolute top-1.5 right-1.5 lg:top-2 lg:right-2 w-2 h-2 bg-primary rounded-full border-2 border-dark" />
-            </button>
+            <NotificationCenter />
 
             <div className="h-10 w-[1px] bg-white/5 hidden lg:block" />
 
@@ -171,7 +165,7 @@ const DashboardLayout = ({ children }) => {
                 </span>
               </div>
               <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-surface border border-white/10 overflow-hidden ring-2 ring-primary/20">
-                <img src={`https://i.pravatar.cc/100?u=${user?.email}`} alt="Avatar" className="w-full h-full object-cover" />
+                <img src={user?.avatar_url || user?.picture || `https://i.pravatar.cc/100?u=${user?.email}`} alt="Avatar" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>
@@ -217,10 +211,8 @@ const DashboardLayout = ({ children }) => {
             >
               <div className="flex items-center justify-between mb-12">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-extrabold text-dark text-xl">
-                    T
-                  </div>
-                  <span className="text-2xl font-bold">TradZ.</span>
+                  <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-10 h-10 rounded-xl object-cover" />
+                  <span className="text-2xl font-bold">Vertex Ridge.</span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/40">
                   <X className="w-6 h-6" />

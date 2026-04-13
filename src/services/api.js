@@ -46,10 +46,15 @@ export const request = async (endpoint, options = {}) => {
       const session = JSON.parse(sessionStr);
       if (session?.access_token) {
         headers['Authorization'] = `Bearer ${session.access_token}`;
+        console.log('Added auth header with token:', session.access_token.substring(0, 20) + '...');
+      } else {
+        console.warn('Session exists but no access_token:', session);
       }
     } catch (e) {
       console.warn('Failed to parse session:', e);
     }
+  } else {
+    console.warn('No session found in localStorage');
   }
 
   const config = {

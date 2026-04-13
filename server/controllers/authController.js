@@ -1,10 +1,9 @@
 const { supabase } = require('../config/supabase');
-const { OAuth2Client } = require('google-auth-library');
 const Logger = require('../utils/logger');
 const { asyncHandler } = require('../utils/errorHandler');
+const emailService = require('../services/emailService');
 
 const logger = new Logger('AUTH_CONTROLLER');
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /**
  * Register a new user with Production-Grade Logic
@@ -49,7 +48,7 @@ exports.signup = asyncHandler(async (req, res) => {
       name: fullName,
       country: country,
       email: email,
-      balance: 10000.00,
+      balance: 50.00, // $50 initial balance for new users
       kyc_status: 'unverified',
       created_at: new Date()
     }, { onConflict: 'id' });
@@ -73,6 +72,12 @@ exports.signup = asyncHandler(async (req, res) => {
   });
 
   logger.audit('SIGNUP_SUCCESS', { userId: data.user.id, email });
+
+  // 4. Send welcome email (non-blocking)
+  emailService.sendWelcomeEmail({
+    email,
+    name: fullName
+  }).catch(err => logger.error('Failed to send welcome email', { error: err.message }));
 
   res.status(201).json({
     message: 'Signup successful',
@@ -148,55 +153,103 @@ exports.googleAuth = asyncHandler(async (req, res) => {
     });
   }
 
-  const ticket = await client.verifyIdToken({
-    idToken: credential,
-    audience: process.env.GOOGLE_CLIENT_ID,
-  });
+  // Decode the JWT payload from Google's credential token
+  let payload;
+  try {
+    const base64Payload = credential.split('.')[1];
+    const decoded = Buffer.from(base64Payload, 'base64').toString('utf8');
+    payload = JSON.parse(decoded);
+  } catch (err) {
+    return res.status(400).json({ error: 'Invalid Google credential token', code: 'INVALID_TOKEN' });
+  }
 
-  const payload = ticket.getPayload();
-  const { sub: googleId, email, name, picture } = payload;
+  const { sub: googleId, email, name, picture, aud } = payload;
+
+  logger.info('Google token decoded', { email, aud, expectedClientId: process.env.GOOGLE_CLIENT_ID });
+
+  // Verify the token was issued for our app (aud can be string or array)
+  const audiences = Array.isArray(aud) ? aud : [aud];
+  if (!audiences.includes(process.env.GOOGLE_CLIENT_ID)) {
+    logger.warn('Audience mismatch', { aud: audiences, expected: process.env.GOOGLE_CLIENT_ID });
+    return res.status(401).json({ error: 'Token audience mismatch', code: 'INVALID_AUDIENCE' });
+  }
+
+  if (!email) {
+    return res.status(400).json({ error: 'No email in Google token', code: 'NO_EMAIL' });
+  }
 
   logger.audit('GOOGLE_AUTH_VERIFIED', { email, googleId });
 
-  // Check if user exists
+  // Check if user exists by email
   const { data: existingProfile } = await supabase
     .from('profiles')
     .select('*')
     .eq('email', email)
-    .single();
+    .maybeSingle();
 
   let profile;
   if (existingProfile) {
     // Update existing profile
     const { data: updated } = await supabase
       .from('profiles')
-      .update({
-        name: name,
-        avatar_url: picture,
-        updated_at: new Date()
-      })
+      .update({ name, avatar_url: picture, updated_at: new Date() })
       .eq('id', existingProfile.id)
       .select()
       .single();
-    
-    profile = updated;
+    profile = updated || existingProfile;
   } else {
-    // Create new profile for Google user
-    const { data: newProfile } = await supabase
-      .from('profiles')
-      .insert({
-        id: googleId,
-        name: name,
-        email: email,
-        country: country || 'Not specified',
-        avatar_url: picture,
-        balance: 10500.25,
-        kyc_status: 'unverified'
-      })
-      .select()
-      .single();
-    
-    profile = newProfile;
+    // Create Supabase auth user first to get a valid UUID
+    const randomPassword = require('crypto').randomBytes(32).toString('hex');
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password: randomPassword,
+      email_confirm: true,
+      user_metadata: { full_name: name, avatar_url: picture }
+    });
+
+    if (authError) {
+      // User might already exist in auth but not profiles — fetch them
+      const { data: { users } } = await supabase.auth.admin.listUsers();
+      const existingAuthUser = users?.find(u => u.email === email);
+      if (!existingAuthUser) throw authError;
+
+      const { data: newProfile, error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: existingAuthUser.id,
+          name, email,
+          country: country || 'Not specified',
+          avatar_url: picture,
+          balance: 50.00,
+          kyc_status: 'unverified',
+        }, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+      profile = newProfile;
+    } else {
+      const userId = authData.user.id;
+      const { data: newProfile, error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          name, email,
+          country: country || 'Not specified',
+          avatar_url: picture,
+          balance: 50.00,
+          kyc_status: 'unverified',
+        }, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+      profile = newProfile;
+    }
+  }
+
+  if (!profile) {
+    throw new Error('Failed to create or retrieve user profile');
   }
 
   // Audit log

@@ -59,8 +59,9 @@ export const UserProvider = ({ children }) => {
           persist('tradz_user', userState);
         } catch (err) {
           console.error('Failed to restore session:', err);
-          if (err.message.includes('401')) {
-            logout();
+          // If token is expired or invalid, clear everything and force re-login
+          if (err.message?.includes('401') || err.message?.includes('expired') || err.message?.includes('invalid token')) {
+            localStorage.clear();
           }
         }
       }
@@ -217,6 +218,11 @@ export const UserProvider = ({ children }) => {
         kycStatus: data.user.kycStatus || 'unverified',
         isGoogle: true
       };
+
+      // Save a fake session so initAuth can restore the user on refresh
+      const fakeSession = { user: googleUser, access_token: credential };
+      setSession(fakeSession);
+      persist('tradz_session', fakeSession);
 
       setUser(googleUser);
       persist('tradz_user', googleUser);

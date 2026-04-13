@@ -6,6 +6,7 @@ import Signup from '../page/auth/Signup';
 import KYCOnboarding from '../page/onboarding/KYCOnboarding';
 import Dashboard from '../page/dashboard/Dashboard';
 import DashboardLayout from '../component/DashboardLayout';
+import AdminLayout from '../component/AdminLayout';
 import Deposit from '../page/finance/Deposit';
 import Withdraw from '../page/finance/Withdraw';
 import Funds from '../page/finance/Funds';
@@ -15,6 +16,12 @@ import Profile from '../page/profile/Profile';
 import CopyTrading from '../page/copytrading/CopyTrading';
 import TraderDetail from '../page/copytrading/TraderDetail';
 import MyCopies from '../page/copytrading/MyCopies';
+import Settings from '../page/settings/Settings';
+import AdminDashboard from '../page/admin/AdminDashboard';
+import AdminLogin from '../page/admin/AdminLogin';
+import AdminUsers from '../page/admin/AdminUsers';
+import AdminSettings from '../page/admin/AdminSettings';
+import AdminLogs from '../page/admin/AdminLogs';
 import ProtectedRoute from './ProtectedRoute';
 
 const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
@@ -162,9 +169,54 @@ const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <DashboardLayout>
-          <Placeholder title="Account Settings" />
+          <Settings />
         </DashboardLayout>
       </ProtectedRoute>
+    ),
+  },
+  // ═══ Admin Routes (No ProtectedRoute - handles auth internally) ═══
+  {
+    path: "/admin/login",
+    element: <AdminLogin />,
+  },
+  {
+    path: "/admin",
+    element: (
+      <AdminLayout>
+        <AdminDashboard />
+      </AdminLayout>
+    ),
+  },
+  {
+    path: "/admin/dashboard",
+    element: (
+      <AdminLayout>
+        <AdminDashboard />
+      </AdminLayout>
+    ),
+  },
+  {
+    path: "/admin/users",
+    element: (
+      <AdminLayout>
+        <AdminUsers />
+      </AdminLayout>
+    ),
+  },
+  {
+    path: "/admin/settings",
+    element: (
+      <AdminLayout>
+        <AdminSettings />
+      </AdminLayout>
+    ),
+  },
+  {
+    path: "/admin/logs",
+    element: (
+      <AdminLayout>
+        <AdminLogs />
+      </AdminLayout>
     ),
   },
   // ═══ Static Pages ═══

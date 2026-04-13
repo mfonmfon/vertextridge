@@ -86,13 +86,12 @@ const Login = () => {
                   <div className="relative w-full rounded-2xl overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.05)] border border-black/5">
                     <GoogleLogin
                       onSuccess={handleGoogleSuccess}
-                      onError={() => console.log('Login Failed')}
-                      useOneTap
+                      onError={() => toast.error('Google sign-in failed')}
                       theme="filled_black"
                       shape="pill"
-                      width="100%"
                       size="large"
                       text="continue_with"
+                      width="400"
                     />
                   </div>
                </div>
