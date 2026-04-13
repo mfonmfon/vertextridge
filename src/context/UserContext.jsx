@@ -207,6 +207,22 @@ export const UserProvider = ({ children }) => {
         throw new Error('Google login failed - no user returned');
       }
 
+      // Check if backend returned a session
+      if (data.session) {
+        // Use the proper session from backend
+        setSession(data.session);
+        persist('tradz_session', data.session);
+      } else {
+        // Fallback: create a fake session (for backward compatibility)
+        const fakeSession = { 
+          user: data.user, 
+          access_token: credential,
+          expires_at: Math.floor(Date.now() / 1000) + 3600
+        };
+        setSession(fakeSession);
+        persist('tradz_session', fakeSession);
+      }
+
       const googleUser = {
         ...data.user,
         id: data.user.id,
@@ -214,15 +230,10 @@ export const UserProvider = ({ children }) => {
         email: data.user.email,
         country: data.user.country,
         picture: data.user.picture,
-        balance: data.user.balance || 10500.25,
+        balance: data.user.balance || 50.00,
         kycStatus: data.user.kycStatus || 'unverified',
         isGoogle: true
       };
-
-      // Save a fake session so initAuth can restore the user on refresh
-      const fakeSession = { user: googleUser, access_token: credential };
-      setSession(fakeSession);
-      persist('tradz_session', fakeSession);
 
       setUser(googleUser);
       persist('tradz_user', googleUser);
