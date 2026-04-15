@@ -58,8 +58,8 @@ const Login = () => {
         {/* Header/Logo */}
         <div className="flex items-center justify-between mb-8 lg:mb-12">
           <Link to="/" className="flex items-center gap-2.5 group">
-             <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center font-extrabold text-white text-base shadow-lg shadow-black/10">T</div>
-             <span className="text-2xl font-bold tracking-tight text-black">TradZ.</span>
+             <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-9 h-9 rounded-xl object-cover" />
+             <span className="text-2xl font-bold tracking-tight text-black">Vertex Ridge</span>
           </Link>
           <Link to="/register" className="text-sm font-bold text-black/40 hover:text-black transition-all bg-black/5 hover:bg-black/10 px-4 py-2 rounded-full">
             Sign up
@@ -172,10 +172,10 @@ const Login = () => {
           className="absolute bottom-16 left-16 right-16 p-12 rounded-[40px] backdrop-blur-2xl bg-white/[0.03] border border-white/10 text-white flex flex-col gap-6"
         >
            <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center font-extrabold text-black text-xs shadow-lg shadow-primary/20">T</div>
-             <span className="text-lg font-bold tracking-tight opacity-60">Success on TradZ</span>
+             <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-8 h-8 rounded-xl object-cover" />
+             <span className="text-lg font-bold tracking-tight opacity-60">Success on Vertex Ridge</span>
           </div>
-          <p className="text-2xl font-semibold leading-snug tracking-tight">"TradZ has completely simplified how I manage my investments. The data is real-time and the interface is incredibly smooth."</p>
+          <p className="text-2xl font-semibold leading-snug tracking-tight">"Vertex Ridge has completely simplified how I manage my investments. The data is real-time and the interface is incredibly smooth."</p>
           
           <div className="flex items-center gap-4">
              <div className="flex -space-x-3">

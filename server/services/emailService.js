@@ -37,7 +37,7 @@ class EmailService {
 
     try {
       const info = await this.transporter.sendMail({
-        from: `"${process.env.SMTP_FROM_NAME || 'TradZ'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
+        from: `"${process.env.SMTP_FROM_NAME || 'Vertex Ridge'}" <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}>`,
         to,
         subject,
         text,
@@ -69,11 +69,11 @@ class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Welcome to TradZ! 🎉</h1>
+            <h1>Welcome to Vertex Ridge! 🎉</h1>
           </div>
           <div class="content">
             <h2>Hi ${user.name},</h2>
-            <p>Thank you for joining TradZ! We're excited to have you on board.</p>
+            <p>Thank you for joining Vertex Ridge! We're excited to have you on board.</p>
             <p>Your account has been successfully created with an initial balance of <strong>$50.00</strong> to get you started.</p>
             <p>Here's what you can do next:</p>
             <ul>
@@ -85,10 +85,10 @@ class EmailService {
             <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard" class="button">Go to Dashboard</a>
             <p>If you have any questions, feel free to reach out to our support team.</p>
             <p>Happy Trading!</p>
-            <p><strong>The TradZ Team</strong></p>
+            <p><strong>The Vertex Ridge Team</strong></p>
           </div>
           <div class="footer">
-            <p>&copy; 2024 TradZ. All rights reserved.</p>
+            <p>&copy; 2024 Vertex Ridge. All rights reserved.</p>
             <p>This email was sent to ${user.email}</p>
           </div>
         </div>
@@ -98,9 +98,9 @@ class EmailService {
 
     return this.sendEmail({
       to: user.email,
-      subject: 'Welcome to TradZ - Your Trading Journey Starts Here!',
+      subject: 'Welcome to Vertex Ridge - Your Trading Journey Starts Here!',
       html,
-      text: `Hi ${user.name}, Welcome to TradZ! Your account has been created with $50.00 initial balance.`
+      text: `Hi ${user.name}, Welcome to Vertex Ridge! Your account has been created with $50.00 initial balance.`
     });
   }
 
@@ -150,10 +150,10 @@ class EmailService {
               </div>
             </div>
             <p>You can view this trade in your portfolio dashboard.</p>
-            <p><strong>The TradZ Team</strong></p>
+            <p><strong>The Vertex Ridge Team</strong></p>
           </div>
           <div class="footer">
-            <p>&copy; 2024 TradZ. All rights reserved.</p>
+            <p>&copy; 2024 Vertex Ridge. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -194,10 +194,10 @@ class EmailService {
             <p><strong>Method:</strong> ${transaction.method}</p>
             <p><strong>Status:</strong> ${transaction.status}</p>
             <p>Your new balance is available for trading immediately.</p>
-            <p><strong>The TradZ Team</strong></p>
+            <p><strong>The Vertex Ridge Team</strong></p>
           </div>
           <div class="footer">
-            <p>&copy; 2024 TradZ. All rights reserved.</p>
+            <p>&copy; 2024 Vertex Ridge. All rights reserved.</p>
           </div>
         </div>
       </body>
@@ -243,10 +243,10 @@ class EmailService {
             <p>${statusInfo.message}</p>
             ${status === 'verified' ? '<p>You now have access to all platform features and higher trading limits.</p>' : ''}
             ${status === 'rejected' ? '<p>Please contact our support team for more information or to resubmit your documents.</p>' : ''}
-            <p><strong>The TradZ Team</strong></p>
+            <p><strong>The Vertex Ridge Team</strong></p>
           </div>
           <div class="footer">
-            <p>&copy; 2024 TradZ. All rights reserved.</p>
+            <p>&copy; 2024 Vertex Ridge. All rights reserved.</p>
           </div>
         </div>
       </body>

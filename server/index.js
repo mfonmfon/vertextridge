@@ -149,7 +149,7 @@ const startServer = async () => {
     }
 
     app.listen(PORT, () => {
-      logger.info(`⚡ TradZ API running on http://localhost:${PORT}`);
+      logger.info(`⚡ Vertex Ridge API running on http://localhost:${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`Database: ${dbConnected ? '✓ Connected' : '✗ Disconnected'}`);
     });

@@ -37,7 +37,7 @@ const Transfer = () => {
     <div className="max-w-4xl mx-auto flex flex-col gap-8">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold">Transfer Funds</h1>
-        <p className="text-white/40">Send money instantly to other TradZ users or between your wallets.</p>
+        <p className="text-white/40">Send money instantly to other Vertex Ridge users or between your wallets.</p>
       </div>
 
       <AnimatePresence mode="wait">

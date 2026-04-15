@@ -106,7 +106,7 @@ export const UserProvider = ({ children }) => {
         setUser(userState);
         persist('tradz_user', userState);
         
-        toast.success('Welcome to TradZ! 🎉');
+        toast.success('Welcome to Vertex Ridge! 🎉');
         return true;
       } catch (profileErr) {
         // If profile fetch fails, still log them in with basic info
@@ -124,7 +124,7 @@ export const UserProvider = ({ children }) => {
         setUser(userState);
         persist('tradz_user', userState);
         
-        toast.success('Account created! Welcome to TradZ! 🎉');
+        toast.success('Account created! Welcome to Vertex Ridge! 🎉');
         return true;
       }
     } catch (err) {

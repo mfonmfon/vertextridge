@@ -69,11 +69,9 @@ const AppCTA = () => {
       {/* Footer minimal info */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 mt-24 pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-bold text-dark text-lg">
-            T
-          </div>
+          <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-8 h-8 rounded-lg object-cover" />
           <span className="text-xl font-bold tracking-tight">
-            Trad<span className="text-primary italic">Z</span>
+            Vertex <span className="text-primary">Ridge</span>
           </span>
         </div>
         <p className="text-white/20 text-sm">

@@ -143,8 +143,8 @@ const Signup = () => {
         {/* Header/Logo */}
         <div className="flex items-center justify-between mb-6 lg:mb-10">
           <Link to="/" className="flex items-center gap-2.5 group">
-             <div className="w-9 h-9 bg-black rounded-xl flex items-center justify-center font-extrabold text-white text-base shadow-lg shadow-black/10">T</div>
-             <span className="text-2xl font-bold tracking-tight text-black">TradZ.</span>
+             <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-9 h-9 rounded-xl object-cover" />
+             <span className="text-2xl font-bold tracking-tight text-black">Vertex Ridge</span>
           </Link>
           <Link to="/login" className="text-sm font-bold text-black/40 hover:text-black transition-all bg-black/5 hover:bg-black/10 px-4 py-2 rounded-full">
             Log in
@@ -321,7 +321,7 @@ const Signup = () => {
              <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center font-extrabold text-black text-xs shadow-lg shadow-primary/20">T</div>
              <span className="text-lg font-bold tracking-tight opacity-60">Join the Tribe</span>
           </div>
-          <h2 className="text-4xl font-bold leading-tight tracking-tighter">Experience <span className="text-primary tracking-normal">limitless</span> trading with TradZ.</h2>
+          <h2 className="text-4xl font-bold leading-tight tracking-tighter">Experience <span className="text-primary tracking-normal">limitless</span> trading with Vertex Ridge.</h2>
           <p className="text-white/60 text-lg leading-relaxed font-medium">Get access to real-time market insights, secure wallet management, and a vibrant community of over 50,000 active traders worldwide.</p>
           <div className="h-px bg-white/10 w-full my-1" />
           <div className="flex items-center gap-6">

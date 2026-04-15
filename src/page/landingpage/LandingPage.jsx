@@ -3,7 +3,8 @@ import Navbar from '../../component/Navbar';
 import Hero from '../../component/Hero';
 import AssetGrid from '../../component/AssetGrid';
 import Features from '../../component/Features';
-import AppCTA from '../../component/AppCTA';
+import FAQSection from '../../component/FAQSection';
+import CTASection from '../../component/CTASection';
 
 const LandingPage = () => {
   return (
@@ -13,7 +14,8 @@ const LandingPage = () => {
         <Hero />
         <AssetGrid />
         <Features />
-        <AppCTA />
+        <FAQSection />
+        <CTASection />
       </main>
     </div>
   );

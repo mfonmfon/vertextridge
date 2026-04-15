@@ -25,6 +25,13 @@ import AdminLogs from '../page/admin/AdminLogs';
 import AdminDebug from '../page/admin/AdminDebug';
 import ProtectedRoute from './ProtectedRoute';
 
+// Static Pages
+import AboutUs from '../page/static/AboutUs';
+import Features from '../page/static/Features';
+import Pricing from '../page/static/Pricing';
+import Contact from '../page/static/Contact';
+import FAQ from '../page/static/FAQ';
+
 const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
   {
     path: "/",
@@ -227,23 +234,23 @@ const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
   // ═══ Static Pages ═══
   {
     path: "/features",
-    element: <Placeholder title="Features" />,
+    element: <Features />,
   },
   {
     path: "/about-us",
-    element: <Placeholder title="About Us" />,
+    element: <AboutUs />,
   },
   {
     path: "/product",
-    element: <Placeholder title="Product" />,
+    element: <Features />,
   },
   {
     path: "/pricing",
-    element: <Placeholder title="Pricing" />,
+    element: <Pricing />,
   },
   {
     path: "/contact",
-    element: <Placeholder title="Contact" />,
+    element: <Contact />,
   },
   {
     path: "/blog",
@@ -263,7 +270,7 @@ const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
   },
   {
     path: "/faq",
-    element: <Placeholder title="FAQ" />,
+    element: <FAQ />,
   },
   {
     path: "/support",
