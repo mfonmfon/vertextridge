@@ -118,24 +118,6 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// SERVE STATIC FILES IN PRODUCTION
-// ═══════════════════════════════════════════════════════════════
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files from the dist directory
-  const distPath = path.join(__dirname, '..', 'dist');
-  app.use(express.static(distPath));
-
-  // Handle client-side routing - send all non-API requests to index.html
-  app.get('/*', (req, res) => {
-    // Skip API routes
-    if (req.path.startsWith('/api')) {
-      return res.status(404).json({ error: 'API endpoint not found' });
-    }
-    res.sendFile(path.join(distPath, 'index.html'));
-  });
-}
-
-// ═══════════════════════════════════════════════════════════════
 // ERROR HANDLING
 // ═══════════════════════════════════════════════════════════════
 app.use(notFound);
