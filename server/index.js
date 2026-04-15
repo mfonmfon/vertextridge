@@ -126,7 +126,11 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(distPath));
 
   // Handle client-side routing - send all non-API requests to index.html
-  app.get('*', (req, res) => {
+  app.get('/*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
