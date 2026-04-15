@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Menu, X, Globe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import logo from '../assets/logo.jpeg';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -31,7 +32,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 group">
-          <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-10 h-10 rounded-lg object-cover transform transition-transform group-hover:scale-105" />
+          <img src={logo} alt="Vertex Ridge" className="w-10 h-10 rounded-lg object-cover transform transition-transform group-hover:scale-105" />
           <span className="text-xl md:text-2xl font-bold tracking-tight">
             Vertex <span className="text-primary">Ridge</span>
           </span>

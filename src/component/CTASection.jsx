@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, TrendingUp, Shield, Zap } from 'lucide-react';
+import logo from '../assets/logo.jpeg';
 
 const CTASection = () => {
   const features = [
@@ -108,7 +109,7 @@ const CTASection = () => {
         {/* Footer */}
         <div className="mt-16 pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex items-center gap-2">
-            <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-8 h-8 rounded-lg object-cover" />
+            <img src={logo} alt="Vertex Ridge" className="w-8 h-8 rounded-lg object-cover" />
             <span className="text-xl font-bold tracking-tight">
               Vertex <span className="text-primary">Ridge</span>
             </span>

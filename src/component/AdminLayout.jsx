@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Shield, Users, Settings, Activity, LogOut, BarChart3, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import logo from '../assets/logo.jpeg';
 
 const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const AdminLayout = ({ children }) => {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card border-b border-white/5 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-8 h-8 rounded-lg object-cover" />
+          <img src={logo} alt="Vertex Ridge" className="w-8 h-8 rounded-lg object-cover" />
           <div>
             <h1 className="text-lg font-bold">Vertex Ridge Admin</h1>
           </div>
@@ -69,7 +70,7 @@ const AdminLayout = ({ children }) => {
         {/* Logo - Desktop only */}
         <div className="hidden lg:block p-6 border-b border-white/5">
           <Link to="/admin/dashboard" className="flex items-center gap-3">
-            <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-10 h-10 rounded-xl object-cover" />
+            <img src={logo} alt="Vertex Ridge" className="w-10 h-10 rounded-xl object-cover" />
             <div>
               <h1 className="text-xl font-bold">Vertex Ridge Admin</h1>
               <p className="text-xs text-white/40">Control Panel</p>

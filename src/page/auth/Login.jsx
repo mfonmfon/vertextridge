@@ -6,6 +6,7 @@ import { useUser } from '../../context/UserContext';
 import { motion } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
+import logo from '../../assets/logo.jpeg';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -58,7 +59,7 @@ const Login = () => {
         {/* Header/Logo */}
         <div className="flex items-center justify-between mb-8 lg:mb-12">
           <Link to="/" className="flex items-center gap-2.5 group">
-             <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-9 h-9 rounded-xl object-cover" />
+             <img src={logo} alt="Vertex Ridge" className="w-9 h-9 rounded-xl object-cover" />
              <span className="text-2xl font-bold tracking-tight text-black">Vertex Ridge</span>
           </Link>
           <Link to="/register" className="text-sm font-bold text-black/40 hover:text-black transition-all bg-black/5 hover:bg-black/10 px-4 py-2 rounded-full">
@@ -172,7 +173,7 @@ const Login = () => {
           className="absolute bottom-16 left-16 right-16 p-12 rounded-[40px] backdrop-blur-2xl bg-white/[0.03] border border-white/10 text-white flex flex-col gap-6"
         >
            <div className="flex items-center gap-3">
-             <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-8 h-8 rounded-xl object-cover" />
+             <img src={logo} alt="Vertex Ridge" className="w-8 h-8 rounded-xl object-cover" />
              <span className="text-lg font-bold tracking-tight opacity-60">Success on Vertex Ridge</span>
           </div>
           <p className="text-2xl font-semibold leading-snug tracking-tight">"Vertex Ridge has completely simplified how I manage my investments. The data is real-time and the interface is incredibly smooth."</p>

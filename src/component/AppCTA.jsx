@@ -2,6 +2,7 @@ import React from 'react';
 import { Apple, Smartphone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import heroMockup from '../assets/hero_mockup.png';
+import logo from '../assets/logo.jpeg';
 
 const AppCTA = () => {
   return (
@@ -69,7 +70,7 @@ const AppCTA = () => {
       {/* Footer minimal info */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 mt-24 pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="flex items-center gap-2">
-          <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-8 h-8 rounded-lg object-cover" />
+          <img src={logo} alt="Vertex Ridge" className="w-8 h-8 rounded-lg object-cover" />
           <span className="text-xl font-bold tracking-tight">
             Vertex <span className="text-primary">Ridge</span>
           </span>

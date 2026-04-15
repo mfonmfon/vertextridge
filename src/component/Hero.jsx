@@ -1,9 +1,24 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
 import heroMockup from '../assets/hero_mockup.png';
 
 const Hero = () => {
+  const navigate = useNavigate();
+
+  const handleOpenAccount = () => {
+    navigate('/register');
+  };
+
+  const handleDemoAccount = () => {
+    // For demo account, you can either:
+    // 1. Navigate to register with a demo flag
+    // 2. Navigate to a separate demo page
+    // 3. Show a modal explaining demo features
+    navigate('/register', { state: { isDemoAccount: true } });
+  };
+
   return (
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-40 overflow-hidden">
       {/* Background patterns */}
@@ -40,6 +55,7 @@ const Hero = () => {
             <motion.button 
               whileHover={{ scale: 1.05, x: 5 }}
               whileTap={{ scale: 0.95 }}
+              onClick={handleOpenAccount}
               className="w-full sm:w-auto px-10 py-4 bg-primary text-dark font-bold rounded-full hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(163,230,53,0.3)] transition-all"
             >
               Open Account
@@ -47,6 +63,7 @@ const Hero = () => {
             <motion.button 
               whileHover={{ scale: 1.05, x: -5 }}
               whileTap={{ scale: 0.95 }}
+              onClick={handleDemoAccount}
               className="w-full sm:w-auto px-10 py-4 bg-white/5 border border-white/10 text-white font-bold rounded-full hover:bg-white/10 transition-all flex items-center justify-center gap-2"
             >
               Open Demo Account

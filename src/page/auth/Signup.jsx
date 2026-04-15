@@ -6,6 +6,7 @@ import { useUser } from '../../context/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
+import logo from '../../assets/logo.jpeg';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -143,7 +144,7 @@ const Signup = () => {
         {/* Header/Logo */}
         <div className="flex items-center justify-between mb-6 lg:mb-10">
           <Link to="/" className="flex items-center gap-2.5 group">
-             <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-9 h-9 rounded-xl object-cover" />
+             <img src={logo} alt="Vertex Ridge" className="w-9 h-9 rounded-xl object-cover" />
              <span className="text-2xl font-bold tracking-tight text-black">Vertex Ridge</span>
           </Link>
           <Link to="/login" className="text-sm font-bold text-black/40 hover:text-black transition-all bg-black/5 hover:bg-black/10 px-4 py-2 rounded-full">

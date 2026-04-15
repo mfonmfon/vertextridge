@@ -18,6 +18,7 @@ import {
   Home,
   Users,
 } from 'lucide-react';
+import logo from '../assets/logo.jpeg';
 import { useUser } from '../context/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import NotificationCenter from './NotificationCenter';
@@ -104,7 +105,7 @@ const DashboardLayout = ({ children }) => {
       {/* ═══ Sidebar Desktop ═══ */}
       <aside className="hidden lg:flex flex-col w-72 border-r border-white/5 bg-dark pt-8 flex-shrink-0">
         <div className="px-8 mb-12 flex items-center gap-3">
-          <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-10 h-10 rounded-xl object-cover" />
+          <img src={logo} alt="Vertex Ridge" className="w-10 h-10 rounded-xl object-cover" />
           <span className="text-2xl font-bold tracking-tight">Vertex Ridge<span className="text-primary italic">.</span></span>
         </div>
 
@@ -136,7 +137,7 @@ const DashboardLayout = ({ children }) => {
           <div className="flex items-center gap-4">
             {/* Mobile: brand */}
             <div className="lg:hidden flex items-center gap-2">
-              <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-8 h-8 rounded-lg object-cover" />
+              <img src={logo} alt="Vertex Ridge" className="w-8 h-8 rounded-lg object-cover" />
               <span className="text-lg font-bold">Vertex Ridge<span className="text-primary italic">.</span></span>
             </div>
 
@@ -211,7 +212,7 @@ const DashboardLayout = ({ children }) => {
             >
               <div className="flex items-center justify-between mb-12">
                 <div className="flex items-center gap-3">
-                  <img src="/src/assets/logo.jpeg" alt="Vertex Ridge" className="w-10 h-10 rounded-xl object-cover" />
+                  <img src={logo} alt="Vertex Ridge" className="w-10 h-10 rounded-xl object-cover" />
                   <span className="text-2xl font-bold">Vertex Ridge.</span>
                 </div>
                 <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/40">
