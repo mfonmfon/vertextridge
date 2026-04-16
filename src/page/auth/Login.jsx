@@ -111,7 +111,7 @@ const Login = () => {
                <label className="text-xs font-bold text-black/30 uppercase tracking-[0.15em] ml-1">Email address</label>
                 <input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="your.email@domain.com"
                   className="w-full bg-white border border-black/[0.08] rounded-2xl px-6 py-4.5 text-base focus:outline-none focus:border-black/20 focus:ring-4 focus:ring-black/[0.02] transition-all font-medium text-black shadow-sm placeholder:text-black/20"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

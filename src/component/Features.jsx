@@ -96,7 +96,7 @@ const Features = () => {
               <div>
                 <h4 className="font-bold text-dark text-lg mb-2">Secure Transaction</h4>
                 <p className="text-dark/40 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam id mattis purus.
+                  Bank-level encryption and multi-factor authentication protect every transaction. Your funds are secured with military-grade security protocols.
                 </p>
               </div>
             </div>
@@ -108,7 +108,7 @@ const Features = () => {
               <div>
                 <h4 className="font-bold text-dark text-lg mb-2">Global Services</h4>
                 <p className="text-dark/40 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam id mattis purus.
+                  Trade 24/7 across global markets with access to stocks, forex, crypto, and commodities from over 195 countries worldwide.
                 </p>
               </div>
             </div>

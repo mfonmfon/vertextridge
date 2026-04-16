@@ -99,7 +99,7 @@ const Withdraw = () => {
               </div>
 
               <div className="flex flex-col gap-4">
-                <Input label="Wallet Address / Bank IBAN" placeholder="Enter details..." />
+                <Input label="Wallet Address / Bank IBAN" placeholder="Wallet address or bank details" />
                 <Input label="Security PIN" type="password" placeholder="••••" />
               </div>
 

@@ -195,7 +195,7 @@ const Signup = () => {
                <label className="text-[10px] font-bold text-black/30 uppercase tracking-[0.15em] ml-1">Full Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. John Doe"
+                  placeholder="Your full name"
                   className="w-full bg-white border border-black/[0.08] rounded-2xl px-6 py-4 text-base focus:outline-none focus:border-black/20 focus:ring-4 focus:ring-black/[0.02] transition-all font-medium text-black shadow-sm placeholder:text-black/20"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -206,7 +206,7 @@ const Signup = () => {
                <label className="text-[10px] font-bold text-black/30 uppercase tracking-[0.15em] ml-1">Email address</label>
                 <input
                   type="email"
-                  placeholder="john@example.com"
+                  placeholder="john@vertexridgee.com"
                   className="w-full bg-white border border-black/[0.08] rounded-2xl px-6 py-4 text-base focus:outline-none focus:border-black/20 focus:ring-4 focus:ring-black/[0.02] transition-all font-medium text-black shadow-sm placeholder:text-black/20"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}

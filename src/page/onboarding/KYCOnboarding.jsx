@@ -124,7 +124,7 @@ const KYCOnboarding = () => {
                   />
                   <Input 
                     label="Nationality" 
-                    placeholder="e.g. United States" 
+                    placeholder="United States" 
                     value={kycData.nationality} 
                     onChange={(e) => setKycData({...kycData, nationality: e.target.value})} 
                   />
@@ -136,7 +136,7 @@ const KYCOnboarding = () => {
                   />
                   <Input 
                     label="Occupation" 
-                    placeholder="e.g. Software Engineer" 
+                    placeholder="Software Engineer" 
                     value={kycData.occupation} 
                     onChange={(e) => setKycData({...kycData, occupation: e.target.value})} 
                   />
@@ -164,32 +164,32 @@ const KYCOnboarding = () => {
                 <div className="grid md:grid-cols-2 gap-6">
                   <Input 
                     label="Home Address" 
-                    placeholder="123 Street Ave" 
+                    placeholder="123 Wall Street" 
                     className="md:col-span-2" 
                     value={kycData.address} 
                     onChange={(e) => setKycData({...kycData, address: e.target.value})} 
                   />
                   <Input 
                     label="City" 
-                    placeholder="City" 
+                    placeholder="New York" 
                     value={kycData.city} 
                     onChange={(e) => setKycData({...kycData, city: e.target.value})} 
                   />
                   <Input 
                     label="Postal Code" 
-                    placeholder="00000" 
+                    placeholder="10001" 
                     value={kycData.postalCode} 
                     onChange={(e) => setKycData({...kycData, postalCode: e.target.value})} 
                   />
                   <Input 
                     label="State/Province" 
-                    placeholder="State" 
+                    placeholder="New York" 
                     value={kycData.state} 
                     onChange={(e) => setKycData({...kycData, state: e.target.value})} 
                   />
                   <Input 
                     label="Country" 
-                    placeholder="Country" 
+                    placeholder="United States" 
                     value={kycData.country} 
                     onChange={(e) => setKycData({...kycData, country: e.target.value})} 
                   />

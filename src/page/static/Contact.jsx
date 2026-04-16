@@ -35,8 +35,8 @@ const Contact = () => {
     {
       icon: Phone,
       title: 'Call Us',
-      content: '+1 (555) 123-4567',
-      link: 'tel:+15551234567',
+      content: '+1(732)407-4815',
+      link: 'tel:+17324074815',
     },
     {
       icon: MapPin,
@@ -174,7 +174,7 @@ const Contact = () => {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full bg-dark border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-all"
-                    placeholder="John Doe"
+                    placeholder="Your full name"
                     required
                   />
                 </div>
@@ -186,7 +186,7 @@ const Contact = () => {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full bg-dark border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-all"
-                    placeholder="john@example.com"
+                    placeholder="your.email@domain.com"
                     required
                   />
                 </div>

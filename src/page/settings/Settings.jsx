@@ -118,7 +118,7 @@ const Settings = () => {
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                placeholder="Enter your name"
+                placeholder="Full name"
               />
             </div>
             
@@ -129,7 +129,7 @@ const Settings = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
-                placeholder="Enter your email"
+                placeholder="your.email@domain.com"
               />
             </div>
           </div>
@@ -141,7 +141,7 @@ const Settings = () => {
               name="country"
               value={formData.country}
               onChange={handleInputChange}
-              placeholder="Enter your country"
+              placeholder="Country name"
             />
           </div>
 
@@ -168,7 +168,7 @@ const Settings = () => {
                 name="currentPassword"
                 value={formData.currentPassword}
                 onChange={handleInputChange}
-                placeholder="Enter current password"
+                placeholder="Current password"
               />
               <button
                 type="button"
@@ -188,7 +188,7 @@ const Settings = () => {
                 name="newPassword"
                 value={formData.newPassword}
                 onChange={handleInputChange}
-                placeholder="Enter new password"
+                placeholder="New password"
               />
             </div>
             

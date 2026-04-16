@@ -60,7 +60,7 @@ const Transfer = () => {
               <div className="grid md:grid-cols-2 gap-6">
                 <Input 
                   label="Recipient Email / User ID" 
-                  placeholder="user@example.com" 
+                  placeholder="user@vertexridgee.com" 
                   icon={Search}
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value)}

@@ -102,7 +102,7 @@ const AdminSettings = () => {
               value={settings.bank_name || ''}
               onChange={(e) => handleChange('bank_name', e.target.value)}
               onBlur={(e) => handleSave('bank_name', e.target.value)}
-              placeholder="e.g., Chase Bank"
+              placeholder="JPMorgan Chase Bank"
               className="w-full"
             />
           </div>
@@ -116,7 +116,7 @@ const AdminSettings = () => {
               value={settings.account_name || ''}
               onChange={(e) => handleChange('account_name', e.target.value)}
               onBlur={(e) => handleSave('account_name', e.target.value)}
-              placeholder="e.g., Vertex Ridge Trading Platform"
+              placeholder="Vertex Ridge Trading Platform"
               className="w-full"
             />
           </div>
@@ -131,7 +131,7 @@ const AdminSettings = () => {
                 value={settings.account_number || ''}
                 onChange={(e) => handleChange('account_number', e.target.value)}
                 onBlur={(e) => handleSave('account_number', e.target.value)}
-                placeholder="Enter account number"
+                placeholder="Account number"
                 className="w-full pr-10"
               />
               {settings.account_number && (
@@ -159,7 +159,7 @@ const AdminSettings = () => {
                 value={settings.routing_number || ''}
                 onChange={(e) => handleChange('routing_number', e.target.value)}
                 onBlur={(e) => handleSave('routing_number', e.target.value)}
-                placeholder="Enter routing number"
+                placeholder="Routing number"
                 className="w-full pr-10"
               />
               {settings.routing_number && (
@@ -187,7 +187,7 @@ const AdminSettings = () => {
                 value={settings.swift_code || ''}
                 onChange={(e) => handleChange('swift_code', e.target.value)}
                 onBlur={(e) => handleSave('swift_code', e.target.value)}
-                placeholder="e.g., CHASUS33"
+                placeholder="CHASUS33"
                 className="w-full pr-10"
               />
               {settings.swift_code && (
@@ -215,7 +215,7 @@ const AdminSettings = () => {
                 value={settings.iban || ''}
                 onChange={(e) => handleChange('iban', e.target.value)}
                 onBlur={(e) => handleSave('iban', e.target.value)}
-                placeholder="e.g., GB29 NWBK 6016 1331 9268 19"
+                placeholder="GB29 NWBK 6016 1331 9268 19"
                 className="w-full pr-10"
               />
               {settings.iban && (
@@ -242,7 +242,7 @@ const AdminSettings = () => {
               value={settings.bank_address || ''}
               onChange={(e) => handleChange('bank_address', e.target.value)}
               onBlur={(e) => handleSave('bank_address', e.target.value)}
-              placeholder="e.g., 123 Wall Street, New York, NY 10005"
+              placeholder="270 Park Avenue, New York, NY 10017"
               className="w-full"
             />
           </div>
@@ -256,7 +256,7 @@ const AdminSettings = () => {
               value={settings.payment_reference || ''}
               onChange={(e) => handleChange('payment_reference', e.target.value)}
               onBlur={(e) => handleSave('payment_reference', e.target.value)}
-              placeholder="e.g., VR-{USER_ID}"
+              placeholder="VR-{USER_ID}"
               className="w-full"
             />
             <p className="text-xs text-white/40 mt-1">

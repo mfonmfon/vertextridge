@@ -120,7 +120,7 @@ const AdminLogin = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="admin@example.com"
+                  placeholder="admin@vertexridgee.com"
                   className="pl-12"
                   required
                   autoComplete="email"
@@ -136,7 +136,7 @@ const AdminLogin = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Enter your password"
+                  placeholder="Your secure password"
                   className="pl-12 pr-12"
                   required
                   autoComplete="current-password"
