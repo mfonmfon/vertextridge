@@ -4,14 +4,44 @@ import { LineChart, Globe, Briefcase, BarChart3, Database, TrendingUp } from 'lu
 
 const AssetGrid = () => {
 
-  const assets = [
-    { name: 'Stocks Trading', icon: LineChart, bg: 'bg-primary/10', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-    { name: 'Forex Trading', icon: Globe, bg: 'bg-primary/10', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-    { name: 'Commodities Trading', icon: Briefcase, bg: 'bg-primary/10', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-    { name: 'Stocks Indices', icon: BarChart3, bg: 'bg-primary/10', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-    { name: 'Cryptos Trading', icon: Database, bg: 'bg-primary/10', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-    { name: 'Bonds Trading', icon: TrendingUp, bg: 'bg-primary/10', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' },
-  ];
+ const assets = [
+  {
+    name: 'Stocks Trading',
+    icon: LineChart,
+    bg: 'bg-primary/10',
+    text: 'Buy and sell shares of publicly listed companies to grow your portfolio and earn returns through price appreciation and dividends.',
+  },
+  {
+    name: 'Forex Trading',
+    icon: Globe,
+    bg: 'bg-primary/10',
+    text: 'Trade global currency pairs like EUR/USD and GBP/JPY, capitalizing on exchange rate fluctuations in the world\'s largest financial market.',
+  },
+  {
+    name: 'Commodities Trading',
+    icon: Briefcase,
+    bg: 'bg-primary/10',
+    text: 'Invest in physical goods like gold, oil, and agricultural products, using commodity markets to diversify and hedge against inflation.',
+  },
+  {
+    name: 'Stocks Indices',
+    icon: BarChart3,
+    bg: 'bg-primary/10',
+    text: 'Gain broad market exposure by trading indices like the S&P 500 and NASDAQ, reflecting the overall performance of a basket of top stocks.',
+  },
+  {
+    name: 'Cryptos Trading',
+    icon: Database,
+    bg: 'bg-primary/10',
+    text: 'Trade leading digital assets like Bitcoin and Ethereum on a secure platform, taking advantage of crypto market volatility around the clock.',
+  },
+  {
+    name: 'Bonds Trading',
+    icon: TrendingUp,
+    bg: 'bg-primary/10',
+    text: 'Invest in government and corporate bonds for stable, predictable returns, balancing your portfolio with lower-risk fixed-income securities.',
+  },
+];
 
   return (
     <section className="bg-white py-24 md:py-32">
