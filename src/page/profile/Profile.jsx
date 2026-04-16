@@ -5,6 +5,7 @@ import { useUser } from '../../context/UserContext';
 import { userService } from '../../services/userService';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import Avatar from '../../component/Avatar';
 
 const Profile = () => {
   const { user, logout, loading, setUser } = useUser();
@@ -72,10 +73,10 @@ const Profile = () => {
         
         <div className="relative">
           <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/20 p-1">
-            <img 
-              src={user?.avatar_url || user?.picture || `https://i.pravatar.cc/150?u=${user?.email}`} 
-              alt="Profile" 
-              className="w-full h-full object-cover rounded-full"
+            <Avatar 
+              user={user} 
+              size={120} 
+              className="w-full h-full" 
             />
           </div>
           <label className="absolute bottom-1 right-1 bg-primary text-dark p-2 rounded-full shadow-lg hover:scale-110 transition-transform cursor-pointer">

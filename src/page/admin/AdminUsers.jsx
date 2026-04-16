@@ -5,6 +5,7 @@ import { Card, Button, Input } from '../../component/shared/UI';
 import { adminService } from '../../services/adminService';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import Avatar from '../../component/Avatar';
 
 const AdminUsers = () => {
   const navigate = useNavigate();
@@ -176,10 +177,10 @@ const AdminUsers = () => {
                     <tr key={user.id} className="border-b border-white/5 hover:bg-white/5">
                       <td className="p-3">
                         <div className="flex items-center gap-2 md:gap-3">
-                          <img
-                            src={user.avatar_url || `https://i.pravatar.cc/40?u=${user.email}`}
-                            alt={user.name}
-                            className="w-6 h-6 md:w-8 md:h-8 rounded-full flex-shrink-0"
+                          <Avatar 
+                            user={user} 
+                            size={32} 
+                            className="flex-shrink-0" 
                           />
                           <div className="min-w-0">
                             <span className="font-medium text-sm md:text-base block truncate">{user.name}</span>

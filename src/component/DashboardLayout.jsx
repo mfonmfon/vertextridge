@@ -22,6 +22,7 @@ import logo from '../assets/logo.jpeg';
 import { useUser } from '../context/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import NotificationCenter from './NotificationCenter';
+import Avatar from './Avatar';
 
 // ────────────────────────────────────
 // Sidebar Link
@@ -165,9 +166,11 @@ const DashboardLayout = ({ children }) => {
                   {user?.kycStatus === 'verified' ? 'Verified' : 'Unverified'}
                 </span>
               </div>
-              <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-full bg-surface border border-white/10 overflow-hidden ring-2 ring-primary/20">
-                <img src={user?.avatar_url || user?.picture || `https://i.pravatar.cc/100?u=${user?.email}`} alt="Avatar" className="w-full h-full object-cover" />
-              </div>
+              <Avatar 
+                user={user} 
+                size={40} 
+                className="ring-2 ring-primary/20" 
+              />
             </div>
           </div>
         </header>

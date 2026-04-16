@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #111;
+            color: white;
+        }
+        .avatar-test {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .avatar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Avatar Generation Test</h1>
+    <p>This tests the avatar utility functions for generating initials-based avatars.</p>
+    
+    <div class="avatar-test" id="avatars"></div>
+
+    <script>
+        // Avatar utility functions (copied from avatarUtils.js)
+        const getInitials = (name) => {
+          if (!name || typeof name !== 'string') return 'U';
+          
+          const words = name.trim().split(' ').filter(word => word.length > 0);
+          
+          if (words.length === 0) return 'U';
+          if (words.length === 1) return words[0].charAt(0).toUpperCase();
+          
+          const firstInitial = words[0].charAt(0).toUpperCase();
+          const lastInitial = words[words.length - 1].charAt(0).toUpperCase();
+          
+          return firstInitial + lastInitial;
+        };
+
+        const getAvatarColor = (name) => {
+          if (!name) return '#056dff';
+          
+          const colors = [
+            '#056dff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+            '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#6366f1',
+          ];
+          
+          let hash = 0;
+          for (let i = 0; i < name.length; i++) {
+            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+          }
+          
+          return colors[Math.abs(hash) % colors.length];
+        };
+
+        const generateAvatarSVG = (name, size = 40) => {
+          const initials = getInitials(name);
+          const backgroundColor = getAvatarColor(name);
+          const fontSize = Math.round(size * 0.4);
+          
+          const svg = `
+            <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="${size/2}" cy="${size/2}" r="${size/2}" fill="${backgroundColor}"/>
+              <text 
+                x="${size/2}" 
+                y="${size/2}" 
+                text-anchor="middle" 
+                dominant-baseline="central" 
+                font-family="system-ui, -apple-system, sans-serif" 
+                font-size="${fontSize}" 
+                font-weight="600" 
+                fill="white"
+              >${initials}</text>
+            </svg>
+          `;
+          
+          return `data:image/svg+xml;base64,${btoa(svg)}`;
+        };
+
+        // Test cases
+        const testUsers = [
+            { name: 'John Doe', email: 'john@example.com' },
+            { name: 'Sarah Johnson', email: 'sarah@example.com' },
+            { name: 'Michael Chen', email: 'michael@example.com' },
+            { name: 'Emily Rodriguez', email: 'emily@example.com' },
+            { name: 'David Kim', email: 'david@example.com' },
+            { name: 'Alice', email: 'alice@example.com' },
+            { name: '', email: 'noname@example.com' },
+            { name: 'A B C D E', email: 'multiple@example.com' }
+        ];
+
+        // Generate avatars
+        const container = document.getElementById('avatars');
+        testUsers.forEach(user => {
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'avatar';
+            
+            const img = document.createElement('img');
+            img.src = generateAvatarSVG(user.name || user.email, 60);
+            img.style.borderRadius = '50%';
+            
+            const label = document.createElement('div');
+            label.textContent = user.name || 'No Name';
+            label.style.fontSize = '12px';
+            label.style.textAlign = 'center';
+            
+            const initials = document.createElement('div');
+            initials.textContent = `Initials: ${getInitials(user.name || user.email)}`;
+            initials.style.fontSize = '10px';
+            initials.style.color = '#888';
+            
+            avatarDiv.appendChild(img);
+            avatarDiv.appendChild(label);
+            avatarDiv.appendChild(initials);
+            container.appendChild(avatarDiv);
+        });
+    </script>
+</body>
+</html>

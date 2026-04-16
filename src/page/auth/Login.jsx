@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
 import logo from '../../assets/logo.jpeg';
+import Avatar from '../../component/Avatar';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -182,7 +183,11 @@ const Login = () => {
              <div className="flex -space-x-3">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="w-10 h-10 rounded-full border-2 border-black bg-surface overflow-hidden shadow-xl">
-                     <img src={`https://i.pravatar.cc/100?u=user${i}`} className="w-full h-full object-cover" />
+                     <Avatar 
+                       user={{ name: `User ${i}`, email: `user${i}@example.com` }} 
+                       size={36} 
+                       className="w-full h-full" 
+                     />
                   </div>
                 ))}
              </div>

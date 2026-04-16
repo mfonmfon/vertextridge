@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Play } from 'lucide-react';
 import heroMockup from '../assets/hero_mockup.png';
+import Avatar from './Avatar';
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -74,7 +75,11 @@ const Hero = () => {
             <div className="flex -space-x-3">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="w-10 h-10 rounded-full border-2 border-dark bg-gunmetal overflow-hidden ring-2 ring-white/10">
-                  <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="user" className="w-full h-full object-cover" />
+                  <Avatar 
+                    user={{ name: `Trader ${i}`, email: `trader${i}@example.com` }} 
+                    size={36} 
+                    className="w-full h-full" 
+                  />
                 </div>
               ))}
               <div className="w-10 h-10 rounded-full border-2 border-dark bg-primary flex items-center justify-center text-dark font-bold text-xs ring-2 ring-white/10">
