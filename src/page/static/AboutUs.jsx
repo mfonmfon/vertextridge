@@ -45,29 +45,6 @@ const AboutUs = () => {
     },
   ];
 
-  const team = [
-    {
-      name: 'Sarah Johnson',
-      role: 'CEO & Founder',
-      image: 'https://i.pravatar.cc/300?img=1',
-    },
-    {
-      name: 'Michael Chen',
-      role: 'CTO',
-      image: 'https://i.pravatar.cc/300?img=2',
-    },
-    {
-      name: 'Emily Rodriguez',
-      role: 'Head of Product',
-      image: 'https://i.pravatar.cc/300?img=3',
-    },
-    {
-      name: 'David Kim',
-      role: 'Head of Trading',
-      image: 'https://i.pravatar.cc/300?img=4',
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-dark text-white">
       <Navbar />
@@ -183,41 +160,6 @@ const AboutUs = () => {
                 </div>
                 <h3 className="text-xl font-bold mb-2">{value.title}</h3>
                 <p className="text-white/60">{value.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Team Section */}
-      <section className="py-20 px-4 md:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Meet Our Team</h2>
-            <p className="text-white/60 max-w-2xl mx-auto">
-              Led by industry veterans with decades of combined experience
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {team.map((member, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="text-center group"
-              >
-                <div className="relative mb-4 overflow-hidden rounded-2xl">
-                  <img
-                    src={member.image}
-                    alt={member.name}
-                    className="w-full aspect-square object-cover group-hover:scale-110 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-dark/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-                <h3 className="text-xl font-bold mb-1">{member.name}</h3>
-                <p className="text-primary text-sm">{member.role}</p>
               </motion.div>
             ))}
           </div>
