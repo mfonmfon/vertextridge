@@ -41,7 +41,7 @@ exports.signup = asyncHandler(async (req, res) => {
   }
 
   // 2. Create profile with transaction safety
-  const { error: profileError } = await supabase
+  const { data: profileData, error: profileError } = await supabase
     .from('profiles')
     .upsert({
       id: data.user.id,
@@ -51,14 +51,23 @@ exports.signup = asyncHandler(async (req, res) => {
       balance: 50.00, // $50 initial balance for new users
       kyc_status: 'unverified',
       created_at: new Date()
-    }, { onConflict: 'id' });
+    }, { onConflict: 'id' })
+    .select()
+    .single();
 
   if (profileError) {
     logger.error('Profile creation failed', { 
       userId: data.user.id, 
       error: profileError.message 
     });
-    // Don't fail the signup, profile can be created later
+    
+    // Clean up the auth user if profile creation fails
+    await supabase.auth.admin.deleteUser(data.user.id);
+    
+    return res.status(500).json({ 
+      error: 'Failed to create user profile',
+      code: 'PROFILE_CREATION_FAILED'
+    });
   }
 
   // 3. Audit log
@@ -84,7 +93,9 @@ exports.signup = asyncHandler(async (req, res) => {
     user: {
       ...data.user,
       name: fullName,
-      country: country
+      country: country,
+      balance: profileData.balance,
+      kycStatus: profileData.kyc_status
     },
     session: data.session,
   });
