@@ -70,27 +70,6 @@ const Hero = () => {
               Open Demo Account
             </motion.button>
           </div>
-
-          <div className="flex items-center gap-4 pt-8">
-            <div className="flex -space-x-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-dark bg-gunmetal overflow-hidden ring-2 ring-white/10">
-                  <Avatar 
-                    user={{ name: `Trader ${i}`, email: `trader${i}@example.com` }} 
-                    size={36} 
-                    className="w-full h-full" 
-                  />
-                </div>
-              ))}
-              <div className="w-10 h-10 rounded-full border-2 border-dark bg-primary flex items-center justify-center text-dark font-bold text-xs ring-2 ring-white/10">
-                +
-              </div>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-bold">3.8M +</span>
-              <span className="text-xs text-muted">Active Users</span>
-            </div>
-          </div>
         </motion.div>
 
         {/* Visual Content */}
