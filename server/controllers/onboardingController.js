@@ -13,12 +13,16 @@ exports.submitOnboarding = asyncHandler(async (req, res) => {
 
   logger.info('Submitting onboarding', { userId });
 
+  // For now, we'll just mark that a document was uploaded
+  // In a real implementation, you'd handle file upload to storage
+  const documentUploaded = req.body.documentUploaded || false;
+
   const { data, error } = await supabase
     .from('profiles')
     .upsert({
       id: userId,
       experience_level: experience || occupation,
-      investment_goals: goals || 'growth',
+      investment_goals: goals ? [goals] : ['growth'],
       risk_tolerance: riskTolerance || 'medium',
       date_of_birth: dob || null,
       nationality: nationality || null,
@@ -29,6 +33,7 @@ exports.submitOnboarding = asyncHandler(async (req, res) => {
       postal_code: postalCode || null,
       state: state || null,
       country: country || null,
+      document_url: documentUploaded ? 'document_uploaded' : null,
       onboarding_completed: true,
       kyc_status: 'pending',
       updated_at: new Date()

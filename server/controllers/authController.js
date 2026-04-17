@@ -275,10 +275,32 @@ exports.googleAuth = asyncHandler(async (req, res) => {
     logger.error('Failed to generate session', { error: sessionError.message });
   }
 
-  // Create a session-like object for the frontend
-  // Note: For production, you should use Supabase's proper OAuth flow
-  // This is a workaround for the current implementation
-  const session = {
+  // Try to create a proper session by signing in the user
+  let validSession = null;
+  try {
+    // Generate a temporary password and sign in to get a real session
+    const tempPassword = require('crypto').randomBytes(16).toString('hex');
+    
+    // Update the user's password temporarily
+    await supabase.auth.admin.updateUserById(profile.id, {
+      password: tempPassword
+    });
+
+    // Sign in to get a real session
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: tempPassword
+    });
+
+    if (!signInError && signInData.session) {
+      validSession = signInData.session;
+    }
+  } catch (sessionGenError) {
+    logger.warn('Failed to generate valid session', { error: sessionGenError.message });
+  }
+
+  // Use the valid session if we got one, otherwise fallback to fake session
+  const session = validSession || {
     access_token: credential, // Use Google credential as temporary token
     refresh_token: null,
     expires_in: 3600,

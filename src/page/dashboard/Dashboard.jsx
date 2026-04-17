@@ -61,6 +61,7 @@ const Dashboard = () => {
   const [copyPL, setCopyPL] = useState(0);
 
   // Unified activity feed
+  
   const recentActivity = [
     ...tradeHistory.map(t => ({ ...t, activityType: 'trade' })),
     ...transactions.map(tx => ({ 

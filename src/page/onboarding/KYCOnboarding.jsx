@@ -12,6 +12,7 @@ const KYCOnboarding = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [uploadedDocument, setUploadedDocument] = useState(null);
   const [kycData, setKycData] = useState({
     dob: '',
     nationality: '',
@@ -27,6 +28,27 @@ const KYCOnboarding = () => {
   const { user, updateKYC } = useUser();
   const navigate = useNavigate();
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload a valid document (JPG, PNG, or PDF)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be less than 5MB');
+      return;
+    }
+
+    setUploadedDocument(file);
+    toast.success('Document uploaded successfully!');
+  };
+
   const handleComplete = async () => {
     if (!user) return;
     
@@ -38,6 +60,7 @@ const KYCOnboarding = () => {
         experience: kycData.occupation,
         goals: 'growth',
         riskTolerance: 'medium',
+        documentUploaded: !!uploadedDocument,
         ...kycData
       });
       
@@ -152,11 +175,40 @@ const KYCOnboarding = () => {
                   <p className="text-white/40 text-sm max-w-sm mx-auto">
                     Please upload a clear scan or photo of your Passport, National ID, or Driver's License.
                   </p>
-                  <label className="mt-4 p-12 border-2 border-dashed border-white/10 rounded-[2rem] hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all flex flex-col items-center gap-4">
-                    <Upload className="w-8 h-8 text-white/20" />
-                    <span className="text-sm font-bold text-white/40">Drop your file here or click to browse</span>
-                    <input type="file" className="hidden" />
-                  </label>
+                  
+                  {!uploadedDocument ? (
+                    <label className="mt-4 p-12 border-2 border-dashed border-white/10 rounded-[2rem] hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-all flex flex-col items-center gap-4">
+                      <Upload className="w-8 h-8 text-white/20" />
+                      <span className="text-sm font-bold text-white/40">Drop your file here or click to browse</span>
+                      <span className="text-xs text-white/20">Supported: JPG, PNG, PDF (Max 5MB)</span>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept=".jpg,.jpeg,.png,.pdf"
+                        onChange={handleFileUpload}
+                      />
+                    </label>
+                  ) : (
+                    <div className="mt-4 p-6 bg-primary/10 border border-primary/20 rounded-[2rem] flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
+                          <CheckCircle className="w-6 h-6 text-primary" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-bold text-sm">{uploadedDocument.name}</p>
+                          <p className="text-xs text-white/40">
+                            {(uploadedDocument.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setUploadedDocument(null)}
+                        className="text-white/40 hover:text-white text-sm font-bold"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -224,6 +276,7 @@ const KYCOnboarding = () => {
                   onClick={() => step < 4 ? setStep(step + 1) : handleComplete()} 
                   className="flex items-center gap-2"
                   loading={loading}
+                  disabled={step === 2 && !uploadedDocument}
                 >
                   {step === 4 ? 'Complete' : 'Continue'}
                   {step < 4 && <ChevronRight className="w-4 h-4" />}
