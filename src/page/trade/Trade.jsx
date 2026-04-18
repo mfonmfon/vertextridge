@@ -106,9 +106,15 @@ const Trade = () => {
     setChartLoading(true);
     try {
       const data = await fetchChart(id, days);
-      setChartData(data);
+      // Extract the prices array and format it for the chart
+      const formattedData = data.prices?.map(point => ({
+        time: point.timestamp,
+        price: point.price
+      })) || [];
+      setChartData(formattedData);
     } catch (err) {
       console.error('Failed to load chart:', err);
+      setChartData([]); // Set empty array on error
     } finally {
       setChartLoading(false);
     }
@@ -266,7 +272,7 @@ const Trade = () => {
             <div className="flex items-center justify-center h-full">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
-          ) : (
+          ) : chartData && chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
@@ -288,6 +294,10 @@ const Trade = () => {
                 />
               </AreaChart>
             </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-white/20 text-sm">No chart data available</p>
+            </div>
           )}
         </div>
 

@@ -11,7 +11,7 @@ import {
   LogOut,
   Bell,
   Search,
-  Menu,
+  MoreHorizontal,
   X,
   BarChart3,
   LineChart,
@@ -86,8 +86,8 @@ const DashboardLayout = ({ children }) => {
     { label: 'Home', icon: Home, path: '/dashboard' },
     { label: 'Markets', icon: BarChart3, path: '/markets' },
     { label: 'Trade', icon: LineChart, path: '/trade' },
-    { label: 'Funds', icon: Wallet, path: '/funds' },
-    { label: 'Profile', icon: User, path: '/profile' },
+    { label: 'Copy', icon: Users, path: '/copy-trading' },
+    { label: 'Settings', icon: Settings, path: '/settings' },
   ];
 
   const isActive = (path) => {
@@ -155,6 +155,14 @@ const DashboardLayout = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-3 lg:gap-6">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 hover:bg-white/5 rounded-xl transition-colors"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+
             <NotificationCenter />
 
             <div className="h-10 w-[1px] bg-white/5 hidden lg:block" />
@@ -166,11 +174,16 @@ const DashboardLayout = ({ children }) => {
                   {user?.kycStatus === 'verified' ? 'Verified' : 'Unverified'}
                 </span>
               </div>
-              <Avatar 
-                user={user} 
-                size={40} 
-                className="ring-2 ring-primary/20" 
-              />
+              <button
+                onClick={() => navigate('/profile')}
+                className="hover:scale-105 transition-transform"
+              >
+                <Avatar 
+                  user={user} 
+                  size={40} 
+                  className="ring-2 ring-primary/20" 
+                />
+              </button>
             </div>
           </div>
         </header>

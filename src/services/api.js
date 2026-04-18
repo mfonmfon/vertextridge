@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 /**
  * Production-Grade API Client with retry logic and better error handling
@@ -99,6 +99,12 @@ export const request = async (endpoint, options = {}) => {
       }
 
       if (!response.ok) {
+        // Handle 401 Unauthorized - clear invalid session
+        if (response.status === 401) {
+          console.warn('🔒 Received 401 - clearing invalid session');
+          localStorage.removeItem('tradz_session');
+        }
+        
         throw new ApiError(
           data.error || data.message || 'Something went wrong',
           response.status,

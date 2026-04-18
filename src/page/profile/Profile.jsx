@@ -108,7 +108,7 @@ const Profile = () => {
              </div>
              <div className="flex items-center gap-2 text-xs font-bold text-white/60">
                 <CreditCard className="w-4 h-4 text-primary" />
-                Member since 2024
+                Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
              </div>
           </div>
         </div>

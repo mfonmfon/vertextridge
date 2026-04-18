@@ -9,12 +9,14 @@ import {
   BarChart3,
   ArrowUpRight,
   ArrowDownLeft,
+  Search,
+  Star,
 } from 'lucide-react';
 import { Card, Button } from '../../component/shared/UI';
 import { useUser } from '../../context/UserContext';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { fetchTrending, fetchPrices, formatPrice, formatChange } from '../../services/marketService';
+import { fetchTrending, fetchPrices, formatPrice, formatChange, searchAssets } from '../../services/marketService';
 import { copyTradingService } from '../../services/copyTradingService';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -59,6 +61,10 @@ const Dashboard = () => {
   const [holdingPrices, setHoldingPrices] = useState({});
   const [loadingMarket, setLoadingMarket] = useState(true);
   const [copyPL, setCopyPL] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Unified activity feed
   
@@ -83,6 +89,28 @@ const Dashboard = () => {
     }
   }, [holdings]);
 
+  // Debounced search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    const timer = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const results = await searchAssets(searchQuery);
+        setSearchResults(results);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const loadMarketData = async () => {
     try {
       const data = await fetchTrending();
@@ -96,8 +124,8 @@ const Dashboard = () => {
 
   const loadCopyTradingStats = async () => {
     try {
-      const relationships = await copyTradingService.getMyCopies();
-      const active = relationships?.filter(r => r.status === 'active') || [];
+      const relationships = await copyTradingService.getMyCopyRelationships();
+      const active = relationships?.relationships?.filter(r => r.status === 'active') || [];
       const totalPL = active.reduce((sum, r) => sum + (r.total_profit || 0), 0);
       setCopyPL(totalPL);
     } catch (err) {
@@ -160,6 +188,73 @@ const Dashboard = () => {
           </Link>
         </motion.div>
       )}
+
+      {/* Asset Search */}
+      <motion.div variants={itemVariants} className="relative">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+          <input
+            type="text"
+            placeholder="Search for Bitcoin, Ethereum, or any crypto..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-card border border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+          />
+        </div>
+
+        {/* Search Results */}
+        {isSearching && (
+          <Card noPadding className="absolute top-full left-0 right-0 z-50 mt-2 max-h-80 overflow-y-auto">
+            <div className="p-4 border-b border-white/5">
+              <span className="text-xs font-bold text-white/30 uppercase tracking-widest">
+                Search Results
+              </span>
+            </div>
+            {searchLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : searchResults.length > 0 ? (
+              <div className="flex flex-col divide-y divide-white/5">
+                {searchResults.map((result) => (
+                  <button
+                    key={result.id}
+                    onClick={() => {
+                      navigate(`/trade/${result.id}`);
+                      setSearchQuery('');
+                      setIsSearching(false);
+                    }}
+                    className="flex items-center gap-3 p-4 hover:bg-white/[0.02] transition-colors text-left"
+                  >
+                    <img src={result.image} alt={result.symbol} className="w-9 h-9 rounded-full" />
+                    <div className="flex-1 min-w-0">
+                      <span className="font-bold text-sm">{result.symbol}</span>
+                      <p className="text-xs text-white/30 truncate">{result.name}</p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      {result.price && (
+                        <span className="font-bold text-sm font-mono">${formatPrice(result.price)}</span>
+                      )}
+                      {result.change24h && (
+                        <span className={`text-xs font-bold ${result.change24h >= 0 ? 'text-profit' : 'text-loss'}`}>
+                          {formatChange(result.change24h)}
+                        </span>
+                      )}
+                      {result.marketCapRank && (
+                        <span className="text-[10px] text-white/20 font-mono bg-white/5 px-2 py-1 rounded-lg">
+                          #{result.marketCapRank}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-white/20 text-sm py-12">No results found</p>
+            )}
+          </Card>
+        )}
+      </motion.div>
 
       {/* ═══ Stats Cards ═══ */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">

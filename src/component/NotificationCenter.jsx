@@ -27,6 +27,11 @@ const NotificationCenter = () => {
       const { unreadCount } = await notificationService.getUnreadCount();
       setUnreadCount(unreadCount);
     } catch (error) {
+      // Silently handle auth errors - user might not be logged in
+      if (error.statusCode === 401) {
+        setUnreadCount(0);
+        return;
+      }
       console.error('Failed to load unread count:', error);
     }
   };
@@ -37,6 +42,11 @@ const NotificationCenter = () => {
       const { notifications } = await notificationService.getNotifications(1, 20);
       setNotifications(notifications);
     } catch (error) {
+      // Handle auth errors gracefully
+      if (error.statusCode === 401) {
+        setNotifications([]);
+        return;
+      }
       console.error('Failed to load notifications:', error);
       // Silently fail - don't show error toast
     } finally {
