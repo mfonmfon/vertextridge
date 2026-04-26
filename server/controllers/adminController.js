@@ -22,22 +22,34 @@ const logActivity = async (adminId, action, details = {}, targetUserId = null) =
  * Get dashboard statistics
  */
 exports.getDashboardStats = asyncHandler(async (req, res) => {
-  const [usersResult, tradesResult, transactionsResult, balanceResult] = await Promise.all([
-    supabase.from('profiles').select('id', { count: 'exact', head: true }),
-    supabase.from('trades').select('id', { count: 'exact', head: true }),
-    supabase.from('transactions').select('amount'),
-    supabase.from('profiles').select('balance')
-  ]);
+  try {
+    const [usersResult, tradesResult, transactionsResult, balanceResult] = await Promise.all([
+      supabase.from('profiles').select('id', { count: 'exact', head: true }),
+      supabase.from('trades').select('id', { count: 'exact', head: true }),
+      supabase.from('transactions').select('amount'),
+      supabase.from('profiles').select('balance')
+    ]);
 
-  const totalVolume = transactionsResult.data?.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0) || 0;
-  const totalBalance = balanceResult.data?.reduce((sum, p) => sum + parseFloat(p.balance || 0), 0) || 0;
+    console.log('Dashboard stats:', {
+      usersCount: usersResult.count,
+      tradesCount: tradesResult.count,
+      transactionsLength: transactionsResult.data?.length,
+      balanceLength: balanceResult.data?.length
+    });
 
-  res.json({
-    totalUsers: usersResult.count || 0,
-    totalTrades: tradesResult.count || 0,
-    totalVolume: totalVolume.toFixed(2),
-    totalBalance: totalBalance.toFixed(2)
-  });
+    const totalVolume = transactionsResult.data?.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0) || 0;
+    const totalBalance = balanceResult.data?.reduce((sum, p) => sum + parseFloat(p.balance || 0), 0) || 0;
+
+    res.json({
+      totalUsers: usersResult.count || 0,
+      totalTrades: tradesResult.count || 0,
+      totalVolume: totalVolume.toFixed(2),
+      totalBalance: totalBalance.toFixed(2)
+    });
+  } catch (error) {
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
 });
 
 /**
@@ -50,71 +62,49 @@ exports.getUsers = asyncHandler(async (req, res) => {
   console.log('getUsers called:', { page, limit, search, offset });
 
   try {
-    // First, ensure all auth users have profiles
-    await supabase.rpc('ensure_user_profiles');
-  } catch (error) {
-    console.log('Profile sync function not available, creating profiles manually');
-    
-    // Create profiles for users who don't have them
-    const { data: missingUsers } = await supabase
-      .from('auth.users')
-      .select('id, email, raw_user_meta_data, created_at')
-      .not('id', 'in', `(SELECT id FROM profiles)`);
+    // Query profiles table directly
+    let query = supabase
+      .from('profiles')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + parseInt(limit) - 1);
 
-    if (missingUsers && missingUsers.length > 0) {
-      const profilesToInsert = missingUsers.map(user => ({
-        id: user.id,
-        email: user.email,
-        name: user.raw_user_meta_data?.full_name || user.raw_user_meta_data?.name || user.email.split('@')[0],
-        balance: 50.00,
-        kyc_status: 'unverified',
-        created_at: user.created_at
-      }));
-
-      await supabase.from('profiles').insert(profilesToInsert);
-      console.log(`Created ${profilesToInsert.length} missing profiles`);
+    if (search && search.trim()) {
+      query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`);
     }
-  }
 
-  // Now query profiles with proper search
-  let query = supabase
-    .from('profiles')
-    .select('*', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(offset, offset + parseInt(limit) - 1);
+    const { data, error, count } = await query;
 
-  if (search && search.trim()) {
-    query = query.or(`email.ilike.%${search}%,name.ilike.%${search}%`);
-  }
+    console.log('getUsers result:', { 
+      dataLength: data?.length, 
+      count, 
+      error: error?.message,
+      firstUser: data?.[0]
+    });
 
-  const { data, error, count } = await query;
+    if (error) {
+      console.error('getUsers error:', error);
+      throw error;
+    }
 
-  console.log('getUsers result:', { 
-    dataLength: data?.length, 
-    count, 
-    error: error?.message,
-    firstUser: data?.[0]
-  });
+    // Ensure all users have required fields
+    const users = (data || []).map(user => ({
+      ...user,
+      name: user.name || user.email?.split('@')[0] || 'Unknown User',
+      balance: parseFloat(user.balance || 0),
+      kyc_status: user.kyc_status || 'unverified'
+    }));
 
-  if (error) {
+    res.json({
+      users,
+      total: count || 0,
+      page: parseInt(page),
+      totalPages: Math.ceil((count || 0) / parseInt(limit))
+    });
+  } catch (error) {
     console.error('getUsers error:', error);
-    throw error;
+    res.status(500).json({ error: 'Failed to fetch users: ' + error.message });
   }
-
-  // Ensure all users have required fields
-  const users = (data || []).map(user => ({
-    ...user,
-    name: user.name || user.email?.split('@')[0] || 'Unknown User',
-    balance: parseFloat(user.balance || 0),
-    kyc_status: user.kyc_status || 'unverified'
-  }));
-
-  res.json({
-    users,
-    total: count || 0,
-    page: parseInt(page),
-    totalPages: Math.ceil((count || 0) / parseInt(limit))
-  });
 });
 
 /**
