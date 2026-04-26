@@ -19,6 +19,7 @@ const AdminLayout = ({ children }) => {
   const navItems = [
     { path: '/admin/dashboard', icon: BarChart3, label: 'Dashboard' },
     { path: '/admin/users', icon: Users, label: 'Users' },
+    { path: '/admin/activity', icon: Activity, label: 'Activity' },
     { path: '/admin/chat-support', icon: MessageCircle, label: 'Chat Support' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' },
     { path: '/admin/logs', icon: Activity, label: 'Activity Logs' },

@@ -24,6 +24,7 @@ import AdminSettings from '../page/admin/AdminSettings';
 import AdminLogs from '../page/admin/AdminLogs';
 import AdminDebug from '../page/admin/AdminDebug';
 import AdminChatSupport from '../page/admin/AdminChatSupport';
+import AdminActivity from '../page/admin/AdminActivity';
 import ProtectedRoute from './ProtectedRoute';
 
 // Static Pages
@@ -221,6 +222,14 @@ const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
     element: (
       <AdminLayout>
         <AdminChatSupport />
+      </AdminLayout>
+    ),
+  },
+  {
+    path: "/admin/activity",
+    element: (
+      <AdminLayout>
+        <AdminActivity />
       </AdminLayout>
     ),
   },
