@@ -28,6 +28,21 @@ const AdminUsers = () => {
       navigate('/admin/login');
       return;
     }
+    
+    // Test API directly
+    console.log('Testing API connection...');
+    fetch('/api/admin/users')
+      .then(r => {
+        console.log('API response status:', r.status);
+        return r.json();
+      })
+      .then(data => {
+        console.log('API response data:', data);
+      })
+      .catch(err => {
+        console.error('API test error:', err);
+      });
+    
     loadUsers();
   }, [navigate]);
 
@@ -62,6 +77,12 @@ const AdminUsers = () => {
       
     } catch (error) {
       console.error('Failed to load users:', error);
+      console.error('Error details:', {
+        message: error.message,
+        statusCode: error.statusCode,
+        code: error.code,
+        stack: error.stack
+      });
       toast.error('Failed to load users: ' + (error.message || 'Unknown error'));
       setUsers([]);
     } finally {
