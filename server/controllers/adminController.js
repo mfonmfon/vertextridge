@@ -1,4 +1,4 @@
-const { supabase } = require('../config/supabase');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 const Logger = require('../utils/logger');
 const { asyncHandler } = require('../utils/errorHandler');
 
@@ -24,10 +24,10 @@ const logActivity = async (adminId, action, details = {}, targetUserId = null) =
 exports.getDashboardStats = asyncHandler(async (req, res) => {
   try {
     const [usersResult, tradesResult, transactionsResult, balanceResult] = await Promise.all([
-      supabase.from('profiles').select('id', { count: 'exact', head: true }),
-      supabase.from('trades').select('id', { count: 'exact', head: true }),
-      supabase.from('transactions').select('amount'),
-      supabase.from('profiles').select('balance')
+      supabaseAdmin.from('profiles').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.from('trades').select('id', { count: 'exact', head: true }),
+      supabaseAdmin.from('transactions').select('amount'),
+      supabaseAdmin.from('profiles').select('balance')
     ]);
 
     console.log('Dashboard stats:', {
@@ -62,8 +62,8 @@ exports.getUsers = asyncHandler(async (req, res) => {
   console.log('getUsers called:', { page, limit, search, offset });
 
   try {
-    // Query profiles table directly
-    let query = supabase
+    // Use service role client to bypass RLS
+    let query = supabaseAdmin
       .from('profiles')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
