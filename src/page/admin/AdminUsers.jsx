@@ -28,21 +28,6 @@ const AdminUsers = () => {
       navigate('/admin/login');
       return;
     }
-    
-    // Test API directly
-    console.log('Testing API connection...');
-    fetch('/api/admin/users')
-      .then(r => {
-        console.log('API response status:', r.status);
-        return r.json();
-      })
-      .then(data => {
-        console.log('API response data:', data);
-      })
-      .catch(err => {
-        console.error('API test error:', err);
-      });
-    
     loadUsers();
   }, [navigate]);
 

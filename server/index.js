@@ -4,7 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
-const { checkConnection } = require('./config/supabase');
+const { checkConnection, supabaseAdmin } = require('./config/supabase');
 const Logger = require('./utils/logger');
 
 // Routes
@@ -117,6 +117,26 @@ app.get('/api/health', async (req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// Debug endpoint - test admin users query
+app.get('/api/debug/users', async (req, res) => {
+  try {
+    const { data, error, count } = await supabaseAdmin
+      .from('profiles')
+      .select('*', { count: 'exact' })
+      .limit(5);
+
+    res.json({
+      success: !error,
+      error: error?.message,
+      count,
+      dataLength: data?.length,
+      data: data?.slice(0, 2) // Return first 2 users
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ═══════════════════════════════════════════════════════════════
