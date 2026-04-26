@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Users, DollarSign, TrendingUp, Activity, Settings, FileText, ArrowRight, Edit2 } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, Activity, Settings, FileText, ArrowRight, Edit2, MessageCircle } from 'lucide-react';
 import { Card, Button } from '../../component/shared/UI';
 import { adminService } from '../../services/adminService';
 import toast from 'react-hot-toast';
@@ -38,7 +38,13 @@ const AdminDashboard = () => {
       
       setStats(statsData);
       const usersList = usersData.users || usersData.data || [];
-      setUsers(usersList);
+      
+      // Sort users by creation date to show recent registrations
+      const sortedUsers = usersList.sort((a, b) => 
+        new Date(b.created_at) - new Date(a.created_at)
+      );
+      
+      setUsers(sortedUsers);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       toast.error('Failed to load dashboard data: ' + error.message);
@@ -150,12 +156,29 @@ const AdminDashboard = () => {
             </div>
           </Card>
         </Link>
+
+        <Link to="/admin/chat-support">
+          <Card className="p-6 hover:bg-white/5 transition-all cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-all">
+                  <MessageCircle className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">Chat Support</h3>
+                  <p className="text-sm text-white/60">Respond to user messages</p>
+                </div>
+              </div>
+              <ArrowRight className="w-5 h-5 text-white/40 group-hover:text-primary transition-all" />
+            </div>
+          </Card>
+        </Link>
       </div>
 
       {/* Recent Users Preview */}
       <Card className="p-4 md:p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <h2 className="text-xl md:text-2xl font-bold">Recent Users</h2>
+          <h2 className="text-xl md:text-2xl font-bold">Recent User Registrations</h2>
           <Link to="/admin/users">
             <Button variant="secondary" className="flex items-center gap-2">
               View All Users
@@ -173,13 +196,14 @@ const AdminDashboard = () => {
                   <th className="text-left p-3 text-xs md:text-sm text-white/60 whitespace-nowrap hidden md:table-cell">Email</th>
                   <th className="text-left p-3 text-xs md:text-sm text-white/60 whitespace-nowrap">Balance</th>
                   <th className="text-left p-3 text-xs md:text-sm text-white/60 whitespace-nowrap">KYC</th>
+                  <th className="text-left p-3 text-xs md:text-sm text-white/60 whitespace-nowrap">Registered</th>
                   <th className="text-left p-3 text-xs md:text-sm text-white/60 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-white/40">
+                    <td colSpan="6" className="p-8 text-center text-white/40">
                       No users found
                     </td>
                   </tr>
@@ -211,6 +235,11 @@ const AdminDashboard = () => {
                           'bg-white/10 text-white/60'
                         }`}>
                           {user.kyc_status}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className="text-xs text-white/60">
+                          {new Date(user.created_at).toLocaleDateString()}
                         </span>
                       </td>
                       <td className="p-3">

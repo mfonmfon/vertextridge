@@ -4,6 +4,7 @@ import CustomCursor from './component/CustomCursor';
 import { UserProvider } from './context/UserContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Toaster } from 'react-hot-toast';
+import Chatbot from './components/Chatbot';
 
 function App() {
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -14,6 +15,7 @@ function App() {
         <Toaster position="top-center" reverseOrder={false} />
         <CustomCursor />
         <RouterProvider router={VERTEX_RIDGE_MARKET_ROUTER} />
+        <Chatbot />
       </UserProvider>
     </GoogleOAuthProvider>
   );

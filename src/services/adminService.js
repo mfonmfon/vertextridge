@@ -12,7 +12,15 @@ export const adminService = {
 
   // User management
   async getUsers(page = 1, limit = 20, search = '') {
-    return request(`/admin/users?page=${page}&limit=${limit}&search=${search}`);
+    try {
+      console.log('AdminService: Fetching users...', { page, limit, search });
+      const response = await request(`/admin/users?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+      console.log('AdminService: Users response:', response);
+      return response;
+    } catch (error) {
+      console.error('AdminService: Failed to fetch users:', error);
+      throw new Error(`Failed to fetch users: ${error.message}`);
+    }
   },
 
   async updateUserBalance(userId, balance, reason) {

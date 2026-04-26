@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Edit2, Trash2, Check, X, UserPlus, Download, Filter } from 'lucide-react';
+import { Search, Edit2, Trash2, Check, X, UserPlus, Download, Filter, RefreshCw } from 'lucide-react';
 import { Card, Button, Input } from '../../component/shared/UI';
 import { adminService } from '../../services/adminService';
 import { motion } from 'framer-motion';
@@ -10,9 +10,11 @@ import Avatar from '../../component/Avatar';
 const AdminUsers = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [editingUser, setEditingUser] = useState(null);
   const [editBalance, setEditBalance] = useState('');
   const [editReason, setEditReason] = useState('');
@@ -24,26 +26,46 @@ const AdminUsers = () => {
     if (!session) {
       toast.error('Please login first');
       navigate('/admin/login');
+      return;
     }
+    loadUsers();
   }, [navigate]);
 
   useEffect(() => {
-    loadUsers();
+    if (page > 1 || searchTerm || filterKYC !== 'all') {
+      loadUsers();
+    }
   }, [page, searchTerm, filterKYC]);
 
   const loadUsers = async () => {
     try {
+      setLoading(true);
+      console.log('Loading users...', { page, searchTerm, filterKYC });
+      
       const data = await adminService.getUsers(page, 20, searchTerm);
+      console.log('Users loaded:', data);
       
       let filteredUsers = data.users || [];
+      
+      // Apply KYC filter on frontend if needed
       if (filterKYC !== 'all') {
         filteredUsers = filteredUsers.filter(u => u.kyc_status === filterKYC);
       }
       
       setUsers(filteredUsers);
       setTotalPages(data.totalPages || 1);
+      setTotalUsers(data.total || 0);
+      
+      if (filteredUsers.length === 0 && data.total > 0) {
+        toast.info(`Found ${data.total} users total`);
+      }
+      
     } catch (error) {
       console.error('Failed to load users:', error);
+      toast.error('Failed to load users: ' + (error.message || 'Unknown error'));
+      setUsers([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -116,12 +138,25 @@ const AdminUsers = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">User Management</h1>
-          <p className="text-white/60 mt-1">Manage all platform users</p>
+          <p className="text-white/60 mt-1">
+            Manage all platform users {totalUsers > 0 && `(${totalUsers} total)`}
+          </p>
         </div>
-        <Button onClick={exportUsers} className="flex items-center gap-2">
-          <Download className="w-4 h-4" />
-          Export CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={loadUsers} 
+            variant="secondary"
+            className="flex items-center gap-2"
+            disabled={loading}
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button onClick={exportUsers} className="flex items-center gap-2">
+            <Download className="w-4 h-4" />
+            Export CSV
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -166,10 +201,28 @@ const AdminUsers = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.length === 0 ? (
+                {loading ? (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-white/40">
-                      No users found
+                    <td colSpan="5" className="p-8 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <RefreshCw className="w-5 h-5 animate-spin" />
+                        <span className="text-white/60">Loading users...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="p-8 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-white/40">
+                          {searchTerm ? `No users found matching "${searchTerm}"` : 'No users found'}
+                        </span>
+                        {totalUsers > 0 && (
+                          <span className="text-white/20 text-sm">
+                            Try adjusting your search or filters
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ) : (

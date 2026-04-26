@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Shield, Users, Settings, Activity, LogOut, BarChart3, Menu, X } from 'lucide-react';
+import { Shield, Users, Settings, Activity, LogOut, BarChart3, Menu, X, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import logo from '../assets/logo.jpeg';
@@ -19,6 +19,7 @@ const AdminLayout = ({ children }) => {
   const navItems = [
     { path: '/admin/dashboard', icon: BarChart3, label: 'Dashboard' },
     { path: '/admin/users', icon: Users, label: 'Users' },
+    { path: '/admin/chat-support', icon: MessageCircle, label: 'Chat Support' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' },
     { path: '/admin/logs', icon: Activity, label: 'Activity Logs' },
   ];

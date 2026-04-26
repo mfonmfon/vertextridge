@@ -17,6 +17,7 @@ const financeRoutes = require('./routes/finance');
 const copyTradingRoutes = require('./routes/copyTrading');
 const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notification');
+const chatRoutes = require('./routes/chatRoutes');
 
 const { errorHandler, notFound } = require('./utils/errorHandler');
 
@@ -103,6 +104,7 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/copy-trading', copyTradingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api', chatRoutes);
 
 // Health check with database connectivity
 app.get('/api/health', async (req, res) => {
