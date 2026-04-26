@@ -52,12 +52,29 @@ const AdminUsers = () => {
     }
   }, [page, searchTerm, filterKYC]);
 
-  const loadUsers = async () => {
+  const loadUsers = async (retryCount = 0) => {
     try {
       setLoading(true);
-      console.log('Loading users...', { page, searchTerm, filterKYC });
+      console.log('Loading users...', { page, searchTerm, filterKYC, retryCount });
       
-      const data = await adminService.getUsers(page, 20, searchTerm);
+      // Try direct fetch first
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const url = `${API_URL}/admin/users?page=${page}&limit=20&search=${encodeURIComponent(searchTerm)}`;
+      
+      console.log('Fetching from:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
       console.log('Users loaded:', data);
       
       let filteredUsers = data.users || [];
@@ -83,8 +100,15 @@ const AdminUsers = () => {
         code: error.code,
         stack: error.stack
       });
-      toast.error('Failed to load users: ' + (error.message || 'Unknown error'));
-      setUsers([]);
+      
+      // Retry logic - retry up to 3 times
+      if (retryCount < 3) {
+        console.log(`Retrying... attempt ${retryCount + 1}`);
+        setTimeout(() => loadUsers(retryCount + 1), 1000 * (retryCount + 1));
+      } else {
+        toast.error('Failed to load users. Please refresh the page.');
+        setUsers([]);
+      }
     } finally {
       setLoading(false);
     }
