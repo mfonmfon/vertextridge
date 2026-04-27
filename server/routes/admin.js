@@ -3,7 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const { adminProtect, superAdminProtect } = require('../middleware/adminMiddleware');
 const adminController = require('../controllers/adminController');
-const { supabase } = require('../config/supabase');
+const { supabaseAdmin } = require('../config/supabase');
 
 // All routes require authentication AND admin privileges
 // TEMPORARY: Bypass admin auth for testing
@@ -33,7 +33,7 @@ router.get('/activity-logs', adminController.getActivityLogs);
 // Get conversations for admin
 router.get('/conversations', async (req, res) => {
   try {
-    const { data: conversations, error } = await supabase
+    const { data: conversations, error } = await supabaseAdmin
       .from('chat_conversations')
       .select(`
         *,
@@ -71,7 +71,7 @@ router.get('/conversations/:id/messages', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const { data: messages, error } = await supabase
+    const { data: messages, error } = await supabaseAdmin
       .from('chat_messages')
       .select('*')
       .eq('conversation_id', id)
@@ -97,7 +97,7 @@ router.post('/conversations/:id/reply', async (req, res) => {
     }
 
     // Insert admin message
-    const { data: newMessage, error: messageError } = await supabase
+    const { data: newMessage, error: messageError } = await supabaseAdmin
       .from('chat_messages')
       .insert({
         conversation_id: id,
@@ -111,7 +111,7 @@ router.post('/conversations/:id/reply', async (req, res) => {
     if (messageError) throw messageError;
 
     // Update conversation status and last message time
-    await supabase
+    await supabaseAdmin
       .from('chat_conversations')
       .update({ 
         last_message_at: new Date().toISOString(),
@@ -132,7 +132,7 @@ router.patch('/conversations/:id/status', async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('chat_conversations')
       .update({ status })
       .eq('id', id);

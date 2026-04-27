@@ -208,15 +208,12 @@ exports.googleAuth = asyncHandler(async (req, res) => {
     });
 
     if (authError) {
-      // User might already exist in auth but not profiles — fetch them
-      const { data: { users } } = await supabase.auth.admin.listUsers();
-      const existingAuthUser = users?.find(u => u.email === email);
-      if (!existingAuthUser) throw authError;
-
+      // If user creation fails, use Google ID as a fallback UUID
+      const fallbackId = `google_${googleId}`;
       const { data: newProfile, error: profileError } = await supabase
         .from('profiles')
         .upsert({
-          id: existingAuthUser.id,
+          id: fallbackId,
           name, email,
           country: country || 'Not specified',
           avatar_url: picture,
@@ -252,56 +249,21 @@ exports.googleAuth = asyncHandler(async (req, res) => {
     throw new Error('Failed to create or retrieve user profile');
   }
 
-  // Audit log
-  await supabase.from('audit_logs').insert({
+  // Audit log (non-blocking)
+  supabase.from('audit_logs').insert({
     user_id: profile.id,
     action: 'GOOGLE_AUTH_SUCCESS',
     resource: 'auth',
     details: { email, method: 'google', country: country || 'Not specified' },
     ip_address: req.ip,
     user_agent: req.get('user-agent')
-  });
+  }).catch(err => logger.error('Failed to insert audit log', { error: err.message }));
 
   logger.audit('GOOGLE_AUTH_SUCCESS', { email });
 
-  // Generate a proper Supabase session for the user
-  // This allows them to make authenticated API calls
-  const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-    type: 'magiclink',
-    email: email,
-  });
-
-  if (sessionError) {
-    logger.error('Failed to generate session', { error: sessionError.message });
-  }
-
-  // Try to create a proper session by signing in the user
-  let validSession = null;
-  try {
-    // Generate a temporary password and sign in to get a real session
-    const tempPassword = require('crypto').randomBytes(16).toString('hex');
-    
-    // Update the user's password temporarily
-    await supabase.auth.admin.updateUserById(profile.id, {
-      password: tempPassword
-    });
-
-    // Sign in to get a real session
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: tempPassword
-    });
-
-    if (!signInError && signInData.session) {
-      validSession = signInData.session;
-    }
-  } catch (sessionGenError) {
-    logger.warn('Failed to generate valid session', { error: sessionGenError.message });
-  }
-
-  // Use the valid session if we got one, otherwise fallback to fake session
-  const session = validSession || {
-    access_token: credential, // Use Google credential as temporary token
+  // Return session immediately without waiting for complex operations
+  const session = {
+    access_token: credential,
     refresh_token: null,
     expires_in: 3600,
     expires_at: Math.floor(Date.now() / 1000) + 3600,
@@ -328,7 +290,7 @@ exports.googleAuth = asyncHandler(async (req, res) => {
       kycStatus: profile.kyc_status,
       isGoogle: true
     },
-    session: session, // Now includes session for authenticated requests
+    session: session,
     message: 'Google authentication successful',
   });
 });

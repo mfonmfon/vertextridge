@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { supabase } = require('../config/supabase');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 
 // Get or create conversation for user
 const getOrCreateConversation = async (userId, userName, userEmail) => {
   try {
     // First try to find existing active conversation
-    let { data: conversation, error } = await supabase
+    let { data: conversation, error } = await supabaseAdmin
       .from('chat_conversations')
       .select('*')
       .eq('user_id', userId)
@@ -19,7 +19,7 @@ const getOrCreateConversation = async (userId, userName, userEmail) => {
 
     // If no active conversation, create new one
     if (!conversation) {
-      const { data: newConversation, error: createError } = await supabase
+      const { data: newConversation, error: createError } = await supabaseAdmin
         .from('chat_conversations')
         .insert({
           user_id: userId,
@@ -57,7 +57,7 @@ router.post('/chat', async (req, res) => {
         const conversation = await getOrCreateConversation(userId, userName, userEmail);
 
         // Store user message
-        await supabase
+        await supabaseAdmin
           .from('chat_messages')
           .insert({
             conversation_id: conversation.id,
@@ -68,7 +68,7 @@ router.post('/chat', async (req, res) => {
           });
 
         // Update conversation last message time
-        await supabase
+        await supabaseAdmin
           .from('chat_conversations')
           .update({ 
             last_message_at: new Date().toISOString(),

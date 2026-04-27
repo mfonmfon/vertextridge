@@ -36,7 +36,8 @@ const AdminChatSupport = () => {
 
   const loadConversations = async () => {
     try {
-      const response = await fetch('/api/admin/conversations');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_URL}/admin/conversations`);
       const data = await response.json();
       setConversations(data.conversations || []);
     } catch (error) {
@@ -49,7 +50,8 @@ const AdminChatSupport = () => {
 
   const loadMessages = async (conversationId) => {
     try {
-      const response = await fetch(`/api/admin/conversations/${conversationId}/messages`);
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_URL}/admin/conversations/${conversationId}/messages`);
       const data = await response.json();
       setMessages(data.messages || []);
     } catch (error) {
@@ -63,7 +65,8 @@ const AdminChatSupport = () => {
 
     setSending(true);
     try {
-      const response = await fetch(`/api/admin/conversations/${selectedConversation.id}/reply`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_URL}/admin/conversations/${selectedConversation.id}/reply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,7 +95,8 @@ const AdminChatSupport = () => {
 
   const updateConversationStatus = async (conversationId, status) => {
     try {
-      const response = await fetch(`/api/admin/conversations/${conversationId}/status`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_URL}/admin/conversations/${conversationId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
