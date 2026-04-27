@@ -208,8 +208,9 @@ exports.googleAuth = asyncHandler(async (req, res) => {
     });
 
     if (authError) {
-      // If user creation fails, use Google ID as a fallback UUID
-      const fallbackId = `google_${googleId}`;
+      // If user creation fails, use a UUID-like ID
+      const crypto = require('crypto');
+      const fallbackId = crypto.randomUUID();
       const { data: newProfile, error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -261,7 +262,8 @@ exports.googleAuth = asyncHandler(async (req, res) => {
 
   logger.audit('GOOGLE_AUTH_SUCCESS', { email });
 
-  // Return session immediately without waiting for complex operations
+  // Return session with Google credential as token
+  // Frontend will use this for authenticated requests
   const session = {
     access_token: credential,
     refresh_token: null,

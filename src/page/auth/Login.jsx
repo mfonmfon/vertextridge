@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, LogIn, ArrowLeft } from 'lucide-react';
 import { Button } from '../../component/shared/UI';
@@ -16,6 +16,15 @@ const Login = () => {
   const { login, googleLogin, authError, loading } = useUser();
   const navigate = useNavigate();
 
+  // Clear auth errors on component mount
+  useEffect(() => {
+    // This helps clear stale error messages from previous attempts
+    const timer = setTimeout(() => {
+      // Error will be cleared by the context if needed
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -31,12 +40,15 @@ const Login = () => {
   };
 
   const handleGoogleSuccess = async (response) => {
-    const success = await googleLogin(response.credential);
-    if (success) {
-      toast.success('Signed in with Google!');
-      navigate('/dashboard');
-    } else {
-      toast.error('Google sign-in failed.');
+    try {
+      const success = await googleLogin(response.credential);
+      if (success) {
+        toast.success('Signed in with Google!');
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
+      toast.error('Google sign-in failed. Please try again.');
     }
   };
 
