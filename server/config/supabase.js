@@ -39,7 +39,7 @@ const checkConnection = async () => {
 };
 
 module.exports = {
-  supabase: supabaseClient,
+  supabase: supabaseAdmin,
   supabaseAdmin,
   supabaseClient,
   checkConnection
