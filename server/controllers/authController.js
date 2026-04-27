@@ -1,4 +1,4 @@
-const { supabase } = require('../config/supabase');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 const Logger = require('../utils/logger');
 const { asyncHandler } = require('../utils/errorHandler');
 const emailService = require('../services/emailService');
@@ -40,8 +40,8 @@ exports.signup = asyncHandler(async (req, res) => {
     });
   }
 
-  // 2. Create profile with transaction safety
-  const { error: profileError } = await supabase
+  // 2. Create profile with transaction safety using admin client
+  const { error: profileError } = await supabaseAdmin
     .from('profiles')
     .upsert({
       id: data.user.id,
@@ -59,17 +59,19 @@ exports.signup = asyncHandler(async (req, res) => {
       error: profileError.message 
     });
     // Continue with signup even if profile creation fails - it can be created later
+  } else {
+    logger.info('Profile created successfully', { userId: data.user.id, email });
   }
 
-  // 3. Audit log
-  await supabase.from('audit_logs').insert({
+  // 3. Audit log (non-blocking)
+  supabaseAdmin.from('audit_logs').insert({
     user_id: data.user.id,
     action: 'USER_SIGNUP',
     resource: 'auth',
     details: { email, method: 'email', country },
     ip_address: req.ip,
     user_agent: req.get('user-agent')
-  });
+  }).catch(err => logger.error('Failed to insert audit log', { error: err.message }));
 
   logger.audit('SIGNUP_SUCCESS', { userId: data.user.id, email });
 
@@ -106,14 +108,14 @@ exports.login = asyncHandler(async (req, res) => {
   if (error) {
     logger.warn('Login failed', { email, error: error.message });
     
-    // Audit failed login
-    await supabase.from('audit_logs').insert({
+    // Audit failed login (non-blocking)
+    supabaseAdmin.from('audit_logs').insert({
       action: 'LOGIN_FAILED',
       resource: 'auth',
       details: { email, reason: error.message },
       ip_address: req.ip,
       user_agent: req.get('user-agent')
-    });
+    }).catch(err => logger.error('Failed to insert audit log', { error: err.message }));
 
     return res.status(401).json({ 
       error: 'Invalid credentials provided',
@@ -121,15 +123,15 @@ exports.login = asyncHandler(async (req, res) => {
     });
   }
 
-  // Audit successful login
-  await supabase.from('audit_logs').insert({
+  // Audit successful login (non-blocking)
+  supabaseAdmin.from('audit_logs').insert({
     user_id: data.user.id,
     action: 'LOGIN_SUCCESS',
     resource: 'auth',
     details: { email },
     ip_address: req.ip,
     user_agent: req.get('user-agent')
-  });
+  }).catch(err => logger.error('Failed to insert audit log', { error: err.message }));
 
   logger.audit('LOGIN_SUCCESS', { userId: data.user.id, email });
 
@@ -181,7 +183,7 @@ exports.googleAuth = asyncHandler(async (req, res) => {
   logger.audit('GOOGLE_AUTH_VERIFIED', { email, googleId });
 
   // Check if user exists by email
-  const { data: existingProfile } = await supabase
+  const { data: existingProfile } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('email', email)
@@ -190,7 +192,7 @@ exports.googleAuth = asyncHandler(async (req, res) => {
   let profile;
   if (existingProfile) {
     // Update existing profile
-    const { data: updated } = await supabase
+    const { data: updated } = await supabaseAdmin
       .from('profiles')
       .update({ name, avatar_url: picture, updated_at: new Date() })
       .eq('id', existingProfile.id)
@@ -211,7 +213,7 @@ exports.googleAuth = asyncHandler(async (req, res) => {
       // If user creation fails, use a UUID-like ID
       const crypto = require('crypto');
       const fallbackId = crypto.randomUUID();
-      const { data: newProfile, error: profileError } = await supabase
+      const { data: newProfile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .upsert({
           id: fallbackId,
@@ -228,7 +230,7 @@ exports.googleAuth = asyncHandler(async (req, res) => {
       profile = newProfile;
     } else {
       const userId = authData.user.id;
-      const { data: newProfile, error: profileError } = await supabase
+      const { data: newProfile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .upsert({
           id: userId,
@@ -251,7 +253,7 @@ exports.googleAuth = asyncHandler(async (req, res) => {
   }
 
   // Audit log (non-blocking)
-  supabase.from('audit_logs').insert({
+  supabaseAdmin.from('audit_logs').insert({
     user_id: profile.id,
     action: 'GOOGLE_AUTH_SUCCESS',
     resource: 'auth',
