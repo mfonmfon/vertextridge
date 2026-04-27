@@ -202,7 +202,7 @@ exports.googleAuth = asyncHandler(async (req, res) => {
   } else {
     // Create Supabase auth user first to get a valid UUID
     const randomPassword = require('crypto').randomBytes(32).toString('hex');
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: randomPassword,
       email_confirm: true,
