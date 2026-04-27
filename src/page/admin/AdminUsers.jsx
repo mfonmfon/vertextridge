@@ -28,6 +28,7 @@ const AdminUsers = () => {
       navigate('/admin/login');
       return;
     }
+    // Load users immediately on mount
     loadUsers();
   }, [navigate]);
 
@@ -37,12 +38,21 @@ const AdminUsers = () => {
     }
   }, [page, searchTerm, filterKYC]);
 
+  // Auto-refresh users every 15 seconds to show new signups
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (page === 1 && !searchTerm && filterKYC === 'all') {
+        loadUsers();
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [page, searchTerm, filterKYC]);
+
   const loadUsers = async (retryCount = 0) => {
     try {
       setLoading(true);
       console.log('Loading users...', { page, searchTerm, filterKYC, retryCount });
       
-      // Try direct fetch first
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
       const url = `${API_URL}/admin/users?page=${page}&limit=20&search=${encodeURIComponent(searchTerm)}`;
       
@@ -86,10 +96,10 @@ const AdminUsers = () => {
         stack: error.stack
       });
       
-      // Retry logic - retry up to 3 times
+      // Retry logic - retry up to 3 times with exponential backoff
       if (retryCount < 3) {
         console.log(`Retrying... attempt ${retryCount + 1}`);
-        setTimeout(() => loadUsers(retryCount + 1), 1000 * (retryCount + 1));
+        setTimeout(() => loadUsers(retryCount + 1), 1000 * Math.pow(2, retryCount));
       } else {
         toast.error('Failed to load users. Please refresh the page.');
         setUsers([]);

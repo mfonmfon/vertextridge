@@ -18,12 +18,22 @@ const AdminActivity = () => {
       return;
     }
     loadUserActivity();
+    
+    // Auto-refresh every 30 seconds to show new registrations
+    const interval = setInterval(loadUserActivity, 30000);
+    return () => clearInterval(interval);
   }, [navigate]);
 
   const loadUserActivity = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/users?page=1&limit=100');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_URL}/admin/users?page=1&limit=100`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
       
       // Sort by creation date (newest first)
