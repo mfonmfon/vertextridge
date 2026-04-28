@@ -19,6 +19,14 @@ const AdminUsers = () => {
   const [editBalance, setEditBalance] = useState('');
   const [editReason, setEditReason] = useState('');
   const [filterKYC, setFilterKYC] = useState('all');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    country: '',
+    balance: '',
+    profit: ''
+  });
 
   // Check auth
   useEffect(() => {
@@ -148,6 +156,35 @@ const AdminUsers = () => {
       loadUsers();
     } catch (error) {
       toast.error('Failed to delete user');
+    }
+  };
+
+  const openEditModal = (user) => {
+    setSelectedUser(user);
+    setEditFormData({
+      name: user.name || '',
+      country: user.country || '',
+      balance: user.balance || 0,
+      profit: user.profit || 0
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateProfile = async () => {
+    if (!selectedUser) return;
+
+    try {
+      await adminService.updateUserProfile(selectedUser.id, {
+        name: editFormData.name,
+        country: editFormData.country,
+        balance: parseFloat(editFormData.balance),
+        profit: parseFloat(editFormData.profit)
+      });
+      toast.success('User profile updated successfully');
+      setShowEditModal(false);
+      loadUsers();
+    } catch (error) {
+      toast.error('Failed to update profile');
     }
   };
 
@@ -346,12 +383,22 @@ const AdminUsers = () => {
                         </select>
                       </td>
                       <td className="p-3">
-                        <button
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="p-2 text-loss hover:bg-loss/10 rounded"
-                        >
-                          <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openEditModal(user)}
+                            className="p-2 text-primary hover:bg-primary/10 rounded"
+                            title="Edit user"
+                          >
+                            <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="p-2 text-loss hover:bg-loss/10 rounded"
+                            title="Delete user"
+                          >
+                            <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -382,6 +429,84 @@ const AdminUsers = () => {
           </Button>
         </div>
       </Card>
+
+      {/* Edit User Modal */}
+      {showEditModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Edit User Profile</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-white/60 hover:text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-2">Name</label>
+                <Input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  placeholder="User name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-2">Country</label>
+                <Input
+                  type="text"
+                  value={editFormData.country}
+                  onChange={(e) => setEditFormData({ ...editFormData, country: e.target.value })}
+                  placeholder="Country"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-2">Balance ($)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.balance}
+                  onChange={(e) => setEditFormData({ ...editFormData, balance: e.target.value })}
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-2">Profit/Loss ($)</label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.profit}
+                  onChange={(e) => setEditFormData({ ...editFormData, profit: e.target.value })}
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-white/40 mt-1">Positive for profit, negative for loss</p>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <Button
+                  onClick={handleUpdateProfile}
+                  className="flex-1"
+                >
+                  Save Changes
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

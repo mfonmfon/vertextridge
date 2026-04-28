@@ -30,6 +30,13 @@ export const adminService = {
     });
   },
 
+  async updateUserProfile(userId, updates) {
+    return request(`/admin/users/${userId}/profile`, {
+      method: 'PATCH',
+      body: updates
+    });
+  },
+
   async updateKYCStatus(userId, kycStatus) {
     return request(`/admin/users/${userId}/kyc`, {
       method: 'PATCH',

@@ -114,11 +114,11 @@ exports.updateUserBalance = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   const { balance, reason } = req.body;
 
-  if (!balance || balance < 0) {
+  if (balance === undefined || balance < 0) {
     return res.status(400).json({ error: 'Invalid balance amount' });
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('profiles')
     .update({ balance: parseFloat(balance), updated_at: new Date() })
     .eq('id', userId)
@@ -140,6 +140,44 @@ exports.updateUserBalance = asyncHandler(async (req, res) => {
   });
 
   res.json({ user: data, message: 'Balance updated successfully' });
+});
+
+/**
+ * Update user profile (profit, name, country, etc.)
+ */
+exports.updateUserProfile = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const updates = req.body;
+
+  // Remove fields that shouldn't be updated directly
+  delete updates.id;
+  delete updates.created_at;
+  delete updates.email; // Email shouldn't be changed
+
+  // Add updated_at timestamp
+  updates.updated_at = new Date();
+
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  await logActivity(req.user?.id || 'admin', 'UPDATE_PROFILE', { 
+    userId, 
+    updates 
+  }, userId);
+
+  logger.audit('ADMIN_PROFILE_UPDATE', { 
+    adminId: req.user?.id || 'admin', 
+    userId, 
+    updates 
+  });
+
+  res.json({ user: data, message: 'Profile updated successfully' });
 });
 
 /**

@@ -16,6 +16,7 @@ router.get('/stats', adminController.getDashboardStats);
 // User management
 router.get('/users', adminController.getUsers);
 router.patch('/users/:userId/balance', adminController.updateUserBalance);
+router.patch('/users/:userId/profile', adminController.updateUserProfile);
 router.patch('/users/:userId/kyc', adminController.updateKYCStatus);
 router.delete('/users/:userId', superAdminProtect, adminController.deleteUser); // Only super admin can delete
 
