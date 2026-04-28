@@ -1,4 +1,4 @@
-const { supabase, supabaseAdmin } = require('../config/supabase');
+const { supabaseAdmin, supabaseClient } = require('../config/supabase');
 const Logger = require('../utils/logger');
 const { asyncHandler } = require('../utils/errorHandler');
 const emailService = require('../services/emailService');
@@ -14,7 +14,7 @@ exports.signup = asyncHandler(async (req, res) => {
   logger.audit('SIGNUP_ATTEMPT', { email });
 
   // 1. Supabase Auth Signup
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
     options: {
@@ -63,19 +63,25 @@ exports.signup = asyncHandler(async (req, res) => {
     logger.info('Profile created successfully', { userId: data.user.id, email });
   }
 
-  // 3. Audit log (non-blocking)
-  supabaseAdmin.from('audit_logs').insert({
-    user_id: data.user.id,
-    action: 'USER_SIGNUP',
-    resource: 'auth',
-    details: { email, method: 'email', country },
-    ip_address: req.ip,
-    user_agent: req.get('user-agent')
-  }).catch(err => logger.error('Failed to insert audit log', { error: err.message }));
+  // Audit log (non-blocking)
+  (async () => {
+    try {
+      await supabaseAdmin.from('audit_logs').insert({
+        user_id: data.user.id,
+        action: 'USER_SIGNUP',
+        resource: 'auth',
+        details: { email, method: 'email', country },
+        ip_address: req.ip,
+        user_agent: req.get('user-agent')
+      });
+    } catch (err) {
+      logger.error('Failed to insert audit log', { error: err.message });
+    }
+  })();
 
   logger.audit('SIGNUP_SUCCESS', { userId: data.user.id, email });
 
-  // 4. Send welcome email (non-blocking)
+  //Send welcome email (non-blocking)
   emailService.sendWelcomeEmail({
     email,
     name: fullName
@@ -97,10 +103,8 @@ exports.signup = asyncHandler(async (req, res) => {
  */
 exports.login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-
   logger.audit('LOGIN_ATTEMPT', { email });
-
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
     email,
     password,
   });
@@ -109,13 +113,19 @@ exports.login = asyncHandler(async (req, res) => {
     logger.warn('Login failed', { email, error: error.message });
     
     // Audit failed login (non-blocking)
-    supabaseAdmin.from('audit_logs').insert({
-      action: 'LOGIN_FAILED',
-      resource: 'auth',
-      details: { email, reason: error.message },
-      ip_address: req.ip,
-      user_agent: req.get('user-agent')
-    }).catch(err => logger.error('Failed to insert audit log', { error: err.message }));
+    (async () => {
+      try {
+        await supabaseAdmin.from('audit_logs').insert({
+          action: 'LOGIN_FAILED',
+          resource: 'auth',
+          details: { email, reason: error.message },
+          ip_address: req.ip,
+          user_agent: req.get('user-agent')
+        });
+      } catch (err) {
+        logger.error('Failed to insert audit log', { error: err.message });
+      }
+    })();
 
     return res.status(401).json({ 
       error: 'Invalid credentials provided',
@@ -124,14 +134,20 @@ exports.login = asyncHandler(async (req, res) => {
   }
 
   // Audit successful login (non-blocking)
-  supabaseAdmin.from('audit_logs').insert({
-    user_id: data.user.id,
-    action: 'LOGIN_SUCCESS',
-    resource: 'auth',
-    details: { email },
-    ip_address: req.ip,
-    user_agent: req.get('user-agent')
-  }).catch(err => logger.error('Failed to insert audit log', { error: err.message }));
+  (async () => {
+    try {
+      await supabaseAdmin.from('audit_logs').insert({
+        user_id: data.user.id,
+        action: 'LOGIN_SUCCESS',
+        resource: 'auth',
+        details: { email },
+        ip_address: req.ip,
+        user_agent: req.get('user-agent')
+      });
+    } catch (err) {
+      logger.error('Failed to insert audit log', { error: err.message });
+    }
+  })();
 
   logger.audit('LOGIN_SUCCESS', { userId: data.user.id, email });
 
@@ -202,7 +218,7 @@ exports.googleAuth = asyncHandler(async (req, res) => {
   } else {
     // Create Supabase auth user first to get a valid UUID
     const randomPassword = require('crypto').randomBytes(32).toString('hex');
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: randomPassword,
       email_confirm: true,
@@ -253,14 +269,20 @@ exports.googleAuth = asyncHandler(async (req, res) => {
   }
 
   // Audit log (non-blocking)
-  supabaseAdmin.from('audit_logs').insert({
-    user_id: profile.id,
-    action: 'GOOGLE_AUTH_SUCCESS',
-    resource: 'auth',
-    details: { email, method: 'google', country: country || 'Not specified' },
-    ip_address: req.ip,
-    user_agent: req.get('user-agent')
-  }).catch(err => logger.error('Failed to insert audit log', { error: err.message }));
+  (async () => {
+    try {
+      await supabaseAdmin.from('audit_logs').insert({
+        user_id: profile.id,
+        action: 'GOOGLE_AUTH_SUCCESS',
+        resource: 'auth',
+        details: { email, method: 'google', country: country || 'Not specified' },
+        ip_address: req.ip,
+        user_agent: req.get('user-agent')
+      });
+    } catch (err) {
+      logger.error('Failed to insert audit log', { error: err.message });
+    }
+  })();
 
   logger.audit('GOOGLE_AUTH_SUCCESS', { email });
 
@@ -303,7 +325,7 @@ exports.googleAuth = asyncHandler(async (req, res) => {
  * Secure Logout
  */
 exports.logout = asyncHandler(async (req, res) => {
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabaseClient.auth.signOut();
   
   if (error) {
     logger.error('Logout failed', { error: error.message });
