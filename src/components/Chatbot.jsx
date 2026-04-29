@@ -14,6 +14,7 @@ const Chatbot = () => {
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
   const { user } = useUser();
 
@@ -24,6 +25,80 @@ const Chatbot = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load existing conversation when chat opens
+  useEffect(() => {
+    if (isOpen && user && !conversationId) {
+      loadExistingConversation();
+    }
+  }, [isOpen, user]);
+
+  // Poll for new messages when chat is open
+  useEffect(() => {
+    if (isOpen && conversationId) {
+      // Fetch immediately
+      fetchMessages();
+      
+      // Then poll every 5 seconds
+      const interval = setInterval(() => {
+        fetchMessages();
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [isOpen, conversationId]);
+
+  const loadExistingConversation = async () => {
+    if (!user) return;
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_URL}/chat/user/${user.id}/conversation`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.conversation) {
+          setConversationId(data.conversation.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+    }
+  };
+
+  const fetchMessages = async () => {
+    if (!conversationId) return;
+
+    try {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_URL}/chat/conversation/${conversationId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.messages && data.messages.length > 0) {
+          const formattedMessages = data.messages.map(msg => ({
+            id: msg.id,
+            text: msg.message,
+            sender: msg.sender_type === 'admin' ? 'bot' : 'user',
+            timestamp: new Date(msg.created_at)
+          }));
+          
+          setMessages([
+            {
+              id: 1,
+              text: "Hi! How can I help you today?",
+              sender: 'bot',
+              timestamp: new Date()
+            },
+            ...formattedMessages
+          ]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
 
   const sendMessage = async () => {
     if (!inputText.trim()) return;
@@ -61,6 +136,11 @@ const Chatbot = () => {
       });
 
       const data = await response.json();
+      
+      // Store conversation ID for polling
+      if (data.conversationId) {
+        setConversationId(data.conversationId);
+      }
       
       const botMessage = {
         id: Date.now() + 1,

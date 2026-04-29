@@ -179,7 +179,7 @@ const CopyTrading = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                onClick={() => navigate(`/dashboard/copy-trading/${trader.id}`)}
+                onClick={() => navigate(`/copy-trading/${trader.id}`)}
                 className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-black hover:shadow-xl transition-all cursor-pointer group"
               >
                 {/* Header */}

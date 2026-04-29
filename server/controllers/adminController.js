@@ -157,9 +157,28 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
   // Add updated_at timestamp
   updates.updated_at = new Date();
 
+  // First, check what columns exist in the profiles table
+  const { data: existingUser, error: fetchError } = await supabaseAdmin
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  // Only include fields that exist in the table
+  const allowedUpdates = {};
+  const existingColumns = Object.keys(existingUser);
+  
+  for (const [key, value] of Object.entries(updates)) {
+    if (existingColumns.includes(key)) {
+      allowedUpdates[key] = value;
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .update(updates)
+    .update(allowedUpdates)
     .eq('id', userId)
     .select()
     .single();
@@ -168,13 +187,13 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
 
   await logActivity(req.user?.id || 'admin', 'UPDATE_PROFILE', { 
     userId, 
-    updates 
+    updates: allowedUpdates 
   }, userId);
 
   logger.audit('ADMIN_PROFILE_UPDATE', { 
     adminId: req.user?.id || 'admin', 
     userId, 
-    updates 
+    updates: allowedUpdates 
   });
 
   res.json({ user: data, message: 'Profile updated successfully' });

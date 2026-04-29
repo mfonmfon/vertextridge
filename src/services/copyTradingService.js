@@ -37,16 +37,10 @@ export const copyTradingService = {
   },
 
   // Start copying a trader
-  startCopying: async (masterId, allocatedAmount, copyPercentage = 100, stopLoss = null, takeProfit = null) => {
+  startCopying: async (data) => {
     return request('/copy-trading/start', {
       method: 'POST',
-      body: {
-        masterId,
-        allocatedAmount,
-        copyPercentage,
-        stopLoss,
-        takeProfit
-      }
+      body: data
     });
   },
 
@@ -95,7 +89,8 @@ function getMockTraders() {
       total_trades: 342,
       avg_trade_duration: '2.5 days',
       max_drawdown: 12.5,
-      sharpe_ratio: 1.85
+      sharpe_ratio: 1.85,
+      performance_fee: 20
     },
     {
       id: '2',
@@ -111,7 +106,8 @@ function getMockTraders() {
       total_trades: 156,
       avg_trade_duration: '5.2 days',
       max_drawdown: 25.8,
-      sharpe_ratio: 1.42
+      sharpe_ratio: 1.42,
+      performance_fee: 25
     },
     {
       id: '3',
@@ -127,7 +123,8 @@ function getMockTraders() {
       total_trades: 89,
       avg_trade_duration: '12.3 days',
       max_drawdown: 5.2,
-      sharpe_ratio: 2.15
+      sharpe_ratio: 2.15,
+      performance_fee: 15
     },
     {
       id: '4',
@@ -143,7 +140,8 @@ function getMockTraders() {
       total_trades: 234,
       avg_trade_duration: '3.8 days',
       max_drawdown: 18.7,
-      sharpe_ratio: 1.67
+      sharpe_ratio: 1.67,
+      performance_fee: 30
     },
     {
       id: '5',
@@ -159,7 +157,8 @@ function getMockTraders() {
       total_trades: 567,
       avg_trade_duration: '1.2 days',
       max_drawdown: 22.1,
-      sharpe_ratio: 1.53
+      sharpe_ratio: 1.53,
+      performance_fee: 22
     },
     {
       id: '6',
@@ -175,7 +174,8 @@ function getMockTraders() {
       total_trades: 45,
       avg_trade_duration: '45.6 days',
       max_drawdown: 8.9,
-      sharpe_ratio: 2.87
+      sharpe_ratio: 2.87,
+      performance_fee: 10
     }
   ];
 }

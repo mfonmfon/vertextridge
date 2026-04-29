@@ -64,7 +64,7 @@ const TraderDetail = () => {
       
       toast.success(`Successfully started copying ${trader.display_name}!`);
       setShowCopyModal(false);
-      navigate('/dashboard/my-copies');
+      navigate('/copy-trading/my-copies');
     } catch (error) {
       toast.error(error.message || 'Failed to start copying');
     } finally {
@@ -100,7 +100,7 @@ const TraderDetail = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Trader not found</h2>
-          <button onClick={() => navigate('/dashboard/copy-trading')} className="text-blue-600 hover:underline">
+          <button onClick={() => navigate('/copy-trading')} className="text-blue-600 hover:underline">
             Back to traders
           </button>
         </div>
@@ -114,7 +114,7 @@ const TraderDetail = () => {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <button
-            onClick={() => navigate('/dashboard/copy-trading')}
+            onClick={() => navigate('/copy-trading')}
             className="flex items-center gap-2 text-gray-600 hover:text-black mb-6 transition"
           >
             <ArrowLeft className="w-5 h-5" />

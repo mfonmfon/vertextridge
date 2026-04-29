@@ -88,6 +88,16 @@ const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
     ),
   },
   {
+    path: "/dashboard/copy-trading",
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout>
+          <CopyTrading />
+        </DashboardLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/copy-trading/my-copies",
     element: (
       <ProtectedRoute>
@@ -99,6 +109,16 @@ const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
   },
   {
     path: "/copy-trading/:id",
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout>
+          <TraderDetail />
+        </DashboardLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/dashboard/copy-trading/:id",
     element: (
       <ProtectedRoute>
         <DashboardLayout>

@@ -104,4 +104,47 @@ router.post('/chat', async (req, res) => {
   }
 });
 
+// Get user's active conversation
+router.get('/chat/user/:userId/conversation', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { data: conversation, error } = await supabaseAdmin
+      .from('chat_conversations')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+
+    res.json({ conversation: conversation || null });
+  } catch (error) {
+    console.error('Error fetching user conversation:', error);
+    res.status(500).json({ error: 'Failed to fetch conversation' });
+  }
+});
+
+// Get conversation messages for user
+router.get('/chat/conversation/:conversationId', async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+
+    const { data: messages, error } = await supabaseAdmin
+      .from('chat_messages')
+      .select('*')
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    res.json({ messages: messages || [] });
+  } catch (error) {
+    console.error('Error fetching conversation messages:', error);
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
 module.exports = router;
