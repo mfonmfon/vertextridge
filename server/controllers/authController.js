@@ -13,6 +13,21 @@ exports.signup = asyncHandler(async (req, res) => {
 
   logger.audit('SIGNUP_ATTEMPT', { email });
 
+  // Check if user already exists in profiles table
+  const { data: existingProfile } = await supabaseAdmin
+    .from('profiles')
+    .select('id, email')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (existingProfile) {
+    logger.warn('Signup failed - user already exists', { email });
+    return res.status(400).json({ 
+      error: 'An account with this email already exists. Please login instead.',
+      code: 'USER_EXISTS'
+    });
+  }
+
   // 1. Supabase Auth Signup
   const { data, error } = await supabaseClient.auth.signUp({
     email,
@@ -22,13 +37,23 @@ exports.signup = asyncHandler(async (req, res) => {
         full_name: fullName,
         country: country
       },
+      emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`
     },
   });
 
   if (error) {
     logger.warn('Signup failed', { email, error: error.message });
+    
+    // Handle specific Supabase errors
+    if (error.message.includes('already registered') || error.message.includes('already exists')) {
+      return res.status(400).json({ 
+        error: 'An account with this email already exists. Please login instead.',
+        code: 'USER_EXISTS'
+      });
+    }
+    
     return res.status(400).json({ 
-      error: error.message,
+      error: error.message || 'Signup failed. Please try again.',
       code: 'SIGNUP_FAILED'
     });
   }
@@ -336,4 +361,113 @@ exports.logout = asyncHandler(async (req, res) => {
     message: 'Session terminated successfully',
     code: 'LOGOUT_SUCCESS'
   });
+});
+
+/**
+ * Forgot Password - Send reset email
+ */
+exports.forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ 
+      error: 'Email is required',
+      code: 'EMAIL_REQUIRED'
+    });
+  }
+
+  logger.audit('FORGOT_PASSWORD_REQUEST', { email });
+
+  try {
+    // Use Supabase to send password reset email
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password`,
+    });
+
+    if (error) {
+      logger.warn('Password reset failed', { email, error: error.message });
+      // Don't reveal if email exists or not for security
+      return res.json({
+        message: 'If an account exists with this email, you will receive a password reset link shortly.',
+        code: 'RESET_EMAIL_SENT'
+      });
+    }
+
+    // Audit log (non-blocking)
+    (async () => {
+      try {
+        await supabaseAdmin.from('audit_logs').insert({
+          action: 'PASSWORD_RESET_REQUESTED',
+          resource: 'auth',
+          details: { email },
+          ip_address: req.ip,
+          user_agent: req.get('user-agent')
+        });
+      } catch (err) {
+        logger.error('Failed to insert audit log', { error: err.message });
+      }
+    })();
+
+    logger.audit('PASSWORD_RESET_EMAIL_SENT', { email });
+
+    res.json({
+      message: 'If an account exists with this email, you will receive a password reset link shortly.',
+      code: 'RESET_EMAIL_SENT'
+    });
+  } catch (error) {
+    logger.error('Forgot password error', { email, error: error.message });
+    res.status(500).json({
+      error: 'Failed to process password reset request',
+      code: 'RESET_FAILED'
+    });
+  }
+});
+
+/**
+ * Reset Password - Update password with token
+ */
+exports.resetPassword = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+
+  if (!password) {
+    return res.status(400).json({ 
+      error: 'New password is required',
+      code: 'PASSWORD_REQUIRED'
+    });
+  }
+
+  if (password.length < 8) {
+    return res.status(400).json({ 
+      error: 'Password must be at least 8 characters long',
+      code: 'PASSWORD_TOO_SHORT'
+    });
+  }
+
+  try {
+    // Update password using Supabase
+    const { error } = await supabaseClient.auth.updateUser({
+      password: password
+    });
+
+    if (error) {
+      logger.warn('Password reset failed', { error: error.message });
+      return res.status(400).json({
+        error: error.message || 'Failed to reset password',
+        code: 'RESET_FAILED'
+      });
+    }
+
+    logger.audit('PASSWORD_RESET_SUCCESS');
+
+    res.json({
+      message: 'Password reset successfully',
+      code: 'PASSWORD_RESET_SUCCESS'
+    });
+  } catch (error) {
+    logger.error('Reset password error', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to reset password',
+      code: 'RESET_FAILED'
+    });
+  }
 });

@@ -3,6 +3,8 @@ import LandingPage from '../page/landingpage/LandingPage';
 import Placeholder from '../page/Placeholder';
 import Login from '../page/auth/Login';
 import Signup from '../page/auth/Signup';
+import ForgotPassword from '../page/auth/ForgotPassword';
+import ResetPassword from '../page/auth/ResetPassword';
 import KYCOnboarding from '../page/onboarding/KYCOnboarding';
 import Dashboard from '../page/dashboard/Dashboard';
 import DashboardLayout from '../component/DashboardLayout';
@@ -46,6 +48,14 @@ const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
   {
     path: "/register",
     element: <Signup />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPassword />,
   },
   {
     path: "/onboarding",

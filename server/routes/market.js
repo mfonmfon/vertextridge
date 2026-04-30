@@ -200,7 +200,7 @@ router.get('/coin/:id', async (req, res) => {
 // ──────────────────────────────────────────────
 // Watchlist routes (protected)
 // ──────────────────────────────────────────────
-router.post('/watchlist', protect, marketController.toggleWatchlist);
+router.post('/watchlist/toggle', protect, marketController.toggleWatchlist);
 router.get('/watchlist', protect, marketController.getWatchlist);
 
 module.exports = router;
