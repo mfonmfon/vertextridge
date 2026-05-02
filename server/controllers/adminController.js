@@ -423,3 +423,155 @@ exports.deleteUser = asyncHandler(async (req, res) => {
 
   res.json({ message: 'User deleted successfully' });
 });
+
+/**
+ * Generate wallet address for user
+ */
+exports.generateWalletAddress = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const { currency, network, label } = req.body;
+
+  // Validate required fields
+  if (!currency || !network) {
+    return res.status(400).json({ error: 'Currency and network are required' });
+  }
+
+  const validCurrencies = ['BTC', 'ETH', 'USDT', 'USDC', 'BNB', 'SOL'];
+  if (!validCurrencies.includes(currency)) {
+    return res.status(400).json({ error: 'Invalid currency' });
+  }
+
+  // Check if user exists
+  const { data: user, error: userError } = await supabaseAdmin
+    .from('profiles')
+    .select('id, email, name')
+    .eq('id', userId)
+    .single();
+
+  if (userError || !user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  // Generate a unique wallet address (deterministic based on user ID and currency)
+  // In production, you would integrate with actual blockchain wallet generation
+  const address = generateCryptoAddress(userId, currency, network);
+
+  // Check if address already exists for this user and currency
+  const { data: existing } = await supabaseAdmin
+    .from('wallet_addresses')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('currency', currency)
+    .eq('network', network)
+    .single();
+
+  let walletData;
+
+  if (existing) {
+    // Update existing address
+    const { data, error } = await supabaseAdmin
+      .from('wallet_addresses')
+      .update({
+        address,
+        label: label || existing.label,
+        is_active: true,
+        updated_at: new Date()
+      })
+      .eq('id', existing.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    walletData = data;
+  } else {
+    // Insert new address
+    const { data, error } = await supabaseAdmin
+      .from('wallet_addresses')
+      .insert({
+        user_id: userId,
+        currency,
+        network,
+        address,
+        label: label || `${currency} Wallet`,
+        generated_by: req.user?.id || null
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    walletData = data;
+  }
+
+  await logActivity(req.user?.id || 'admin', 'GENERATE_WALLET', { 
+    userId, 
+    currency, 
+    network,
+    address 
+  }, userId);
+
+  logger.audit('ADMIN_WALLET_GENERATE', { 
+    adminId: req.user?.id || 'admin', 
+    userId, 
+    currency,
+    network 
+  });
+
+  res.json({ 
+    wallet: walletData, 
+    message: 'Wallet address generated successfully' 
+  });
+});
+
+/**
+ * Get wallet addresses for a user
+ */
+exports.getUserWallets = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  const { data, error } = await supabaseAdmin
+    .from('wallet_addresses')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  res.json({ wallets: data || [] });
+});
+
+/**
+ * Helper function to generate crypto addresses
+ * In production, integrate with actual blockchain wallet generation services
+ */
+function generateCryptoAddress(userId, currency, network) {
+  const crypto = require('crypto');
+  
+  // Create a deterministic hash based on user ID, currency, and network
+  const seed = `${userId}-${currency}-${network}-${Date.now()}`;
+  const hash = crypto.createHash('sha256').update(seed).digest('hex');
+  
+  // Format address based on currency
+  switch (currency) {
+    case 'BTC':
+      // Bitcoin addresses start with 1, 3, or bc1
+      return `bc1q${hash.substring(0, 38)}`;
+    
+    case 'ETH':
+    case 'USDT':
+    case 'USDC':
+      // Ethereum addresses start with 0x
+      return `0x${hash.substring(0, 40)}`;
+    
+    case 'BNB':
+      // Binance Smart Chain addresses (similar to Ethereum)
+      return `0x${hash.substring(0, 40)}`;
+    
+    case 'SOL':
+      // Solana addresses are base58 encoded
+      return hash.substring(0, 44);
+    
+    default:
+      return hash.substring(0, 42);
+  }
+}

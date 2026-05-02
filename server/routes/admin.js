@@ -20,6 +20,10 @@ router.patch('/users/:userId/profile', adminController.updateUserProfile);
 router.patch('/users/:userId/kyc', adminController.updateKYCStatus);
 router.delete('/users/:userId', superAdminProtect, adminController.deleteUser); // Only super admin can delete
 
+// Wallet management
+router.post('/users/:userId/wallet', adminController.generateWalletAddress);
+router.get('/users/:userId/wallets', adminController.getUserWallets);
+
 // Platform settings
 router.get('/settings', adminController.getSettings);
 router.put('/settings', superAdminProtect, adminController.updateSetting); // Only super admin can update settings

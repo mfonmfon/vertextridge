@@ -277,7 +277,7 @@ const TraderDetail = () => {
                   value={copyData.allocatedAmount}
                   onChange={(e) => setCopyData({...copyData, allocatedAmount: e.target.value})}
                   placeholder={`Min $${trader.min_copy_amount}`}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-gray-900"
                 />
                 <p className="text-xs text-gray-500 mt-1">Your balance: ${user?.balance?.toLocaleString()}</p>
               </div>
@@ -304,7 +304,7 @@ const TraderDetail = () => {
                     value={copyData.stopLoss}
                     onChange={(e) => setCopyData({...copyData, stopLoss: e.target.value})}
                     placeholder="Optional"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-gray-900"
                   />
                 </div>
                 <div>
@@ -314,7 +314,7 @@ const TraderDetail = () => {
                     value={copyData.takeProfit}
                     onChange={(e) => setCopyData({...copyData, takeProfit: e.target.value})}
                     placeholder="Optional"
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-gray-900"
                   />
                 </div>
               </div>
@@ -323,7 +323,7 @@ const TraderDetail = () => {
             <div className="flex gap-3">
               <button
                 onClick={() => setShowCopyModal(false)}
-                className="flex-1 px-6 py-3 border border-gray-200 rounded-xl font-semibold hover:bg-gray-50 transition"
+                className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-100 hover:border-gray-400 transition"
               >
                 Cancel
               </button>

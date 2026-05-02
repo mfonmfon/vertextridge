@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Edit2, Trash2, Check, X, UserPlus, Download, Filter, RefreshCw } from 'lucide-react';
+import { Search, Edit2, Trash2, Check, X, Download, RefreshCw, Wallet } from 'lucide-react';
 import { Card, Button, Input } from '../../component/shared/UI';
 import { adminService } from '../../services/adminService';
 import { motion } from 'framer-motion';
@@ -27,6 +27,14 @@ const AdminUsers = () => {
     balance: '',
     profit: ''
   });
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [walletUser, setWalletUser] = useState(null);
+  const [walletFormData, setWalletFormData] = useState({
+    currency: 'BTC',
+    network: 'Bitcoin',
+    label: ''
+  });
+  const [userWallets, setUserWallets] = useState([]);
 
   // Check auth
   useEffect(() => {
@@ -186,6 +194,69 @@ const AdminUsers = () => {
     } catch (error) {
       toast.error('Failed to update profile');
     }
+  };
+
+  const openWalletModal = async (user) => {
+    setWalletUser(user);
+    setWalletFormData({
+      currency: 'BTC',
+      network: 'Bitcoin',
+      label: ''
+    });
+    setShowWalletModal(true);
+    
+    // Load existing wallets
+    try {
+      const response = await adminService.getUserWallets(user.id);
+      setUserWallets(response.wallets || []);
+    } catch (error) {
+      console.error('Failed to load wallets:', error);
+      setUserWallets([]);
+    }
+  };
+
+  const handleGenerateWallet = async () => {
+    if (!walletUser) return;
+
+    try {
+      await adminService.generateWalletAddress(
+        walletUser.id,
+        walletFormData.currency,
+        walletFormData.network,
+        walletFormData.label || `${walletFormData.currency} Wallet`
+      );
+      toast.success('Wallet address generated successfully');
+      
+      // Reload wallets
+      const response = await adminService.getUserWallets(walletUser.id);
+      setUserWallets(response.wallets || []);
+      
+      // Reset form
+      setWalletFormData({
+        currency: 'BTC',
+        network: 'Bitcoin',
+        label: ''
+      });
+    } catch (error) {
+      toast.error('Failed to generate wallet address');
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Address copied to clipboard');
+  };
+
+  const getCurrencyNetworks = (currency) => {
+    const networks = {
+      'BTC': ['Bitcoin'],
+      'ETH': ['Ethereum'],
+      'USDT': ['Ethereum (ERC20)', 'BSC (BEP20)', 'Tron (TRC20)'],
+      'USDC': ['Ethereum (ERC20)', 'BSC (BEP20)', 'Solana'],
+      'BNB': ['BSC (BEP20)'],
+      'SOL': ['Solana']
+    };
+    return networks[currency] || ['Mainnet'];
   };
 
   const exportUsers = () => {
@@ -392,6 +463,13 @@ const AdminUsers = () => {
                             <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
                           </button>
                           <button
+                            onClick={() => openWalletModal(user)}
+                            className="p-2 text-profit hover:bg-profit/10 rounded"
+                            title="Generate wallet"
+                          >
+                            <Wallet className="w-3 h-3 md:w-4 md:h-4" />
+                          </button>
+                          <button
                             onClick={() => handleDeleteUser(user.id)}
                             className="p-2 text-loss hover:bg-loss/10 rounded"
                             title="Delete user"
@@ -503,6 +581,157 @@ const AdminUsers = () => {
                   Cancel
                 </Button>
               </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Wallet Generation Modal */}
+      {showWalletModal && walletUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-2xl p-6 my-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold">Wallet Management</h2>
+                <p className="text-white/60 text-sm mt-1">
+                  {walletUser.name} ({walletUser.email})
+                </p>
+              </div>
+              <button
+                onClick={() => setShowWalletModal(false)}
+                className="text-white/60 hover:text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Existing Wallets */}
+            {userWallets.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Existing Wallets</h3>
+                <div className="space-y-2">
+                  {userWallets.map((wallet) => (
+                    <div
+                      key={wallet.id}
+                      className="bg-surface/50 border border-white/10 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-primary">{wallet.currency}</span>
+                            <span className="text-xs text-white/60 bg-white/5 px-2 py-1 rounded">
+                              {wallet.network}
+                            </span>
+                          </div>
+                          {wallet.label && (
+                            <p className="text-sm text-white/60 mb-2">{wallet.label}</p>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <code className="text-xs bg-black/30 px-2 py-1 rounded flex-1 truncate">
+                              {wallet.address}
+                            </code>
+                            <button
+                              onClick={() => copyToClipboard(wallet.address)}
+                              className="text-primary hover:text-primary/80 text-xs px-2 py-1 bg-primary/10 rounded"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                          <p className="text-xs text-white/40 mt-2">
+                            Created: {new Date(wallet.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Generate New Wallet */}
+            <div className="border-t border-white/10 pt-6">
+              <h3 className="text-lg font-semibold mb-4">Generate New Wallet</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2">
+                    Cryptocurrency
+                  </label>
+                  <select
+                    value={walletFormData.currency}
+                    onChange={(e) => {
+                      const currency = e.target.value;
+                      const networks = getCurrencyNetworks(currency);
+                      setWalletFormData({
+                        ...walletFormData,
+                        currency,
+                        network: networks[0]
+                      });
+                    }}
+                    className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+                  >
+                    <option value="BTC">Bitcoin (BTC)</option>
+                    <option value="ETH">Ethereum (ETH)</option>
+                    <option value="USDT">Tether (USDT)</option>
+                    <option value="USDC">USD Coin (USDC)</option>
+                    <option value="BNB">Binance Coin (BNB)</option>
+                    <option value="SOL">Solana (SOL)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2">
+                    Network
+                  </label>
+                  <select
+                    value={walletFormData.network}
+                    onChange={(e) =>
+                      setWalletFormData({ ...walletFormData, network: e.target.value })
+                    }
+                    className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+                  >
+                    {getCurrencyNetworks(walletFormData.currency).map((network) => (
+                      <option key={network} value={network}>
+                        {network}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2">
+                    Label (Optional)
+                  </label>
+                  <Input
+                    type="text"
+                    value={walletFormData.label}
+                    onChange={(e) =>
+                      setWalletFormData({ ...walletFormData, label: e.target.value })
+                    }
+                    placeholder="e.g., Main BTC Wallet"
+                  />
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <Button onClick={handleGenerateWallet} className="flex-1 flex items-center justify-center gap-2">
+                    <Wallet className="w-4 h-4" />
+                    Generate Wallet
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowWalletModal(false)}
+                    className="flex-1"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+              <p className="text-xs text-white/60">
+                <strong className="text-primary">Note:</strong> Generated addresses are for demonstration purposes. 
+                In production, integrate with actual blockchain wallet generation services.
+              </p>
             </div>
           </Card>
         </div>

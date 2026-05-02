@@ -50,6 +50,18 @@ export const adminService = {
     });
   },
 
+  // Wallet management
+  async generateWalletAddress(userId, currency, network, label) {
+    return request(`/admin/users/${userId}/wallet`, {
+      method: 'POST',
+      body: { currency, network, label }
+    });
+  },
+
+  async getUserWallets(userId) {
+    return request(`/admin/users/${userId}/wallets`);
+  },
+
   // Platform settings
   async getSettings() {
     return request('/admin/settings');
