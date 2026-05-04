@@ -25,7 +25,9 @@ const AdminUsers = () => {
     name: '',
     country: '',
     balance: '',
-    profit: ''
+    profit: '',
+    total_holdings: '',
+    portfolio_value: ''
   });
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [walletUser, setWalletUser] = useState(null);
@@ -173,7 +175,9 @@ const AdminUsers = () => {
       name: user.name || '',
       country: user.country || '',
       balance: user.balance || 0,
-      profit: user.profit || 0
+      profit: user.profit || 0,
+      total_holdings: user.total_holdings || 0,
+      portfolio_value: user.portfolio_value || 0
     });
     setShowEditModal(true);
   };
@@ -186,7 +190,9 @@ const AdminUsers = () => {
         name: editFormData.name,
         country: editFormData.country,
         balance: parseFloat(editFormData.balance),
-        profit: parseFloat(editFormData.profit)
+        profit: parseFloat(editFormData.profit),
+        total_holdings: parseInt(editFormData.total_holdings),
+        portfolio_value: parseFloat(editFormData.portfolio_value)
       });
       toast.success('User profile updated successfully');
       setShowEditModal(false);
@@ -543,27 +549,54 @@ const AdminUsers = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-white/60 mb-2">Balance ($)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editFormData.balance}
-                  onChange={(e) => setEditFormData({ ...editFormData, balance: e.target.value })}
-                  placeholder="0.00"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2">Balance ($)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editFormData.balance}
+                    onChange={(e) => setEditFormData({ ...editFormData, balance: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2">Total Profit ($)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editFormData.profit}
+                    onChange={(e) => setEditFormData({ ...editFormData, profit: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  <p className="text-xs text-white/40 mt-1">+/- for profit/loss</p>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-white/60 mb-2">Profit/Loss ($)</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editFormData.profit}
-                  onChange={(e) => setEditFormData({ ...editFormData, profit: e.target.value })}
-                  placeholder="0.00"
-                />
-                <p className="text-xs text-white/40 mt-1">Positive for profit, negative for loss</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2">Holdings</label>
+                  <Input
+                    type="number"
+                    value={editFormData.total_holdings}
+                    onChange={(e) => setEditFormData({ ...editFormData, total_holdings: e.target.value })}
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-white/40 mt-1">Number of assets</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2">Portfolio Value ($)</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editFormData.portfolio_value}
+                    onChange={(e) => setEditFormData({ ...editFormData, portfolio_value: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  <p className="text-xs text-white/40 mt-1">Total portfolio</p>
+                </div>
               </div>
 
               <div className="flex gap-3 mt-6">

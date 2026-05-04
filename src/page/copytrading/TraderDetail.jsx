@@ -42,35 +42,55 @@ const TraderDetail = () => {
   };
 
   const handleStartCopy = async () => {
-    if (!copyData.allocatedAmount || parseFloat(copyData.allocatedAmount) < trader.min_copy_amount) {
-      toast.error(`Minimum copy amount is $${trader.min_copy_amount}`);
-      return;
-    }
+      // Check if user is logged in
+      if (!user) {
+        toast.error('Please login to start copying traders');
+        navigate('/login');
+        return;
+      }
 
-    if (parseFloat(copyData.allocatedAmount) > user.balance) {
-      toast.error('Insufficient balance');
-      return;
-    }
+      if (!copyData.allocatedAmount || parseFloat(copyData.allocatedAmount) < trader.min_copy_amount) {
+        toast.error(`Minimum copy amount is $${trader.min_copy_amount}`);
+        return;
+      }
 
-    try {
-      setCopying(true);
-      await copyTradingService.startCopying({
-        masterId: trader.id,
-        allocatedAmount: parseFloat(copyData.allocatedAmount),
-        copyPercentage: parseFloat(copyData.copyPercentage),
-        stopLoss: copyData.stopLoss ? parseFloat(copyData.stopLoss) : null,
-        takeProfit: copyData.takeProfit ? parseFloat(copyData.takeProfit) : null
-      });
-      
-      toast.success(`Successfully started copying ${trader.display_name}!`);
-      setShowCopyModal(false);
-      navigate('/copy-trading/my-copies');
-    } catch (error) {
-      toast.error(error.message || 'Failed to start copying');
-    } finally {
-      setCopying(false);
-    }
-  };
+      if (parseFloat(copyData.allocatedAmount) > user.balance) {
+        toast.error('Insufficient balance');
+        return;
+      }
+
+      try {
+        setCopying(true);
+        await copyTradingService.startCopying({
+          masterId: trader.id,
+          allocatedAmount: parseFloat(copyData.allocatedAmount),
+          copyPercentage: parseFloat(copyData.copyPercentage),
+          stopLoss: copyData.stopLoss ? parseFloat(copyData.stopLoss) : null,
+          takeProfit: copyData.takeProfit ? parseFloat(copyData.takeProfit) : null
+        });
+
+        toast.success(`Successfully started copying ${trader.display_name}!`);
+        setShowCopyModal(false);
+        navigate('/copy-trading/my-copies');
+      } catch (error) {
+        console.error('Copy trading error:', error);
+        
+        // Handle specific error cases
+        if (error.statusCode === 401 || error.code === 'INVALID_TOKEN' || error.code === 'TOKEN_EXPIRED') {
+          toast.error('Session expired. Please login again.');
+          localStorage.clear();
+          navigate('/login');
+        } else if (error.code === 'INSUFFICIENT_FUNDS') {
+          toast.error('Insufficient balance. Please deposit funds first.');
+        } else if (error.code === 'ALREADY_COPYING') {
+          toast.error('You are already copying this trader.');
+        } else {
+          toast.error(error.message || 'Failed to start copying. Please try again.');
+        }
+      } finally {
+        setCopying(false);
+      }
+    };
 
   const getRiskColor = (score) => {
     if (score <= 3) return 'text-green-500 bg-green-500/10';
@@ -230,7 +250,7 @@ const TraderDetail = () => {
               <Tooltip 
                 contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                 labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                formatter={(value) => [`$${value.toLocaleString()}`, 'Profit']}
+                formatter={(value) => [`${value.toLocaleString()}`, 'Profit']}
               />
               <Line 
                 type="monotone" 
@@ -276,7 +296,7 @@ const TraderDetail = () => {
                   type="number"
                   value={copyData.allocatedAmount}
                   onChange={(e) => setCopyData({...copyData, allocatedAmount: e.target.value})}
-                  placeholder={`Min $${trader.min_copy_amount}`}
+                  placeholder={`Min ${trader.min_copy_amount}`}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-black/5 text-gray-900"
                 />
                 <p className="text-xs text-gray-500 mt-1">Your balance: ${user?.balance?.toLocaleString()}</p>

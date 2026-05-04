@@ -70,6 +70,14 @@ exports.getProfile = asyncHandler(async (req, res) => {
     throw error;
   }
 
+  // Debug logging
+  console.log('📤 SERVER: Sending profile data:', {
+    profit: data?.profit,
+    total_holdings: data?.total_holdings,
+    portfolio_value: data?.portfolio_value,
+    balance: data?.balance
+  });
+
   res.status(200).json({
     profile: data || null,
   });

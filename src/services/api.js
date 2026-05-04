@@ -1,7 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 /**
- * Production-Grade API Client with retry logic and better error handling
+ * Production-Grade API Client - NO TOKEN EXPIRATION CHECKS
  */
 
 class ApiError extends Error {
@@ -29,6 +29,22 @@ const retryRequest = async (fn, retries = 3, delay = 1000) => {
 };
 
 /**
+ * Check if endpoint is public (doesn't require auth)
+ */
+const isPublicEndpoint = (endpoint) => {
+  const publicEndpoints = [
+    '/copy-trading/masters',
+    '/market/',
+    '/auth/login',
+    '/auth/signup',
+    '/auth/google',
+    '/auth/forgot-password',
+    '/auth/reset-password'
+  ];
+  return publicEndpoints.some(path => endpoint.startsWith(path));
+};
+
+/**
  * Generic fetch wrapper for API calls with timeout
  */
 export const request = async (endpoint, options = {}) => {
@@ -39,34 +55,20 @@ export const request = async (endpoint, options = {}) => {
     ...customOptions.headers,
   };
 
-  // Get token from session if available
+  // Get token from session if available - NO EXPIRATION CHECK
   const sessionStr = localStorage.getItem('tradz_session');
-  console.log('=== API CLIENT DEBUG ===');
-  console.log('Endpoint:', endpoint);
-  console.log('Session string exists:', !!sessionStr);
   
   if (sessionStr) {
     try {
       const session = JSON.parse(sessionStr);
-      console.log('Parsed session keys:', Object.keys(session));
-      console.log('Session structure:', {
-        hasAccessToken: !!session?.access_token,
-        hasRefreshToken: !!session?.refresh_token,
-        expiresAt: session?.expires_at,
-        expiresIn: session?.expires_in
-      });
+      const token = session?.access_token || session?.token || session?.session?.access_token;
       
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-        console.log('✓ Added auth header with token:', session.access_token.substring(0, 30) + '...');
-      } else {
-        console.warn('✗ Session exists but no access_token. Session:', session);
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
     } catch (e) {
-      console.error('✗ Failed to parse session:', e);
+      console.error('Failed to parse session:', e);
     }
-  } else {
-    console.warn('✗ No session found in localStorage');
   }
 
   const config = {
@@ -99,12 +101,7 @@ export const request = async (endpoint, options = {}) => {
       }
 
       if (!response.ok) {
-        // Handle 401 Unauthorized - clear invalid session
-        if (response.status === 401) {
-          console.warn('🔒 Received 401 - clearing invalid session');
-          localStorage.removeItem('tradz_session');
-        }
-        
+        // NO AUTOMATIC LOGOUT - just throw the error
         throw new ApiError(
           data.error || data.message || 'Something went wrong',
           response.status,

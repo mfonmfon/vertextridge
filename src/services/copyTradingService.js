@@ -1,14 +1,10 @@
 import { request } from './api';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
-
 export const copyTradingService = {
   // Get all master traders
   getMasterTraders: async (sortBy = 'followers', limit = 20, offset = 0) => {
     try {
-      const response = await fetch(`${API_BASE}/copy-trading/masters?sortBy=${sortBy}&limit=${limit}&offset=${offset}`);
-      if (!response.ok) throw new Error('Failed to fetch master traders');
-      return await response.json();
+      return await request(`/copy-trading/masters?sortBy=${sortBy}&limit=${limit}&offset=${offset}`);
     } catch (error) {
       console.error('Error fetching master traders:', error);
       // Return mock data for development
@@ -24,9 +20,7 @@ export const copyTradingService = {
   // Get single master trader details
   getMasterTrader: async (id) => {
     try {
-      const response = await fetch(`${API_BASE}/copy-trading/masters/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch master trader');
-      return await response.json();
+      return await request(`/copy-trading/masters/${id}`);
     } catch (error) {
       console.error('Error fetching master trader:', error);
       return {
@@ -52,22 +46,24 @@ export const copyTradingService = {
   },
 
   // Get user's copy relationships
-  getMyCopyRelationships: async () => {
+  getMyCopies: async () => {
     try {
-      return await request('/copy-trading/my-copies');
+      const response = await request('/copy-trading/my-copies');
+      return response.relationships || [];
     } catch (error) {
       console.error('Error fetching copy relationships:', error);
-      return { relationships: [] };
+      return [];
     }
   },
 
   // Get copied trades history
   getCopiedTrades: async (limit = 50, offset = 0) => {
     try {
-      return await request(`/copy-trading/trades?limit=${limit}&offset=${offset}`);
+      const response = await request(`/copy-trading/trades?limit=${limit}&offset=${offset}`);
+      return response.trades || [];
     } catch (error) {
       console.error('Error fetching copied trades:', error);
-      return { trades: [] };
+      return [];
     }
   }
 };

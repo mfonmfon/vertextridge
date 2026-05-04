@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { supabase } from '../config/supabase';
 import { authService } from '../services/authService';
 import { onboardingService } from '../services/onboardingService';
 import { tradeService } from '../services/tradeService';
@@ -18,51 +19,53 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
 
-  // Load all persisted state on mount
+  // Load all persisted state on mount - SIMPLE VERSION, NO EXPIRATION CHECKS
   useEffect(() => {
     const initAuth = async () => {
       setLoading(true);
+      
+      // Always check localStorage first for immediate restoration
       const savedSession = localStorage.getItem('tradz_session');
+      const savedUser = localStorage.getItem('tradz_user');
 
-      if (savedSession) {
-        const session = JSON.parse(savedSession);
-        setSession(session);
+      if (savedSession && savedUser) {
         try {
-          // 1. Fetch fresh user profile
-          const { profile } = await onboardingService.getProfile(session.user.id);
+          const session = JSON.parse(savedSession);
+          const parsedUser = JSON.parse(savedUser);
           
-          // 2. Fetch all portfolio data from backend in parallel
-          const [holdingsRes, tradesRes, txRes, watchlistRes] = await Promise.all([
-            tradeService.getHoldings(),
-            tradeService.getHistory(),
-            financeService.getTransactions(),
-            marketService.getWatchlist()
-          ]);
-
-          const userState = {
-            ...session.user,
-            ...profile,
-            balance: profile?.balance || 10500.25,
-            kycStatus: profile?.kycStatus || 'unverified',
-          };
+          // Set user and session immediately - NO CHECKS
+          setSession(session);
+          setUser(parsedUser);
+          console.log('✅ User restored from localStorage:', parsedUser.email);
           
-          setUser(userState);
-          setHoldings(holdingsRes.holdings.map(h => ({
-            ...h,
-            assetId: h.asset_id,
-            avgBuyPrice: h.avg_buy_price
-          })));
-          setTradeHistory(tradesRes.trades);
-          setTransactions(txRes.transactions);
-          setWatchlist(watchlistRes.watchlist);
+          // Try to restore Supabase session in background
+          if (session.access_token && session.refresh_token) {
+            supabase.auth.setSession({
+              access_token: session.access_token,
+              refresh_token: session.refresh_token
+            }).catch(err => {
+              console.warn('Could not restore Supabase session:', err);
+            });
+          }
           
-          persist('tradz_user', userState);
+          // Try to fetch fresh data in background (non-blocking)
+          onboardingService.getProfile(parsedUser.id)
+            .then(({ profile }) => {
+              const userState = {
+                ...parsedUser,
+                ...profile,
+                balance: profile?.balance || parsedUser.balance,
+                kycStatus: profile?.kyc_status || parsedUser.kycStatus,
+              };
+              setUser(userState);
+              persist('tradz_user', userState);
+            })
+            .catch(err => {
+              console.warn('Could not fetch fresh profile:', err);
+            });
+            
         } catch (err) {
           console.error('Failed to restore session:', err);
-          // If token is expired or invalid, clear everything and force re-login
-          if (err.message?.includes('401') || err.message?.includes('expired') || err.message?.includes('invalid token')) {
-            localStorage.clear();
-          }
         }
       }
 
@@ -86,11 +89,31 @@ export const UserProvider = ({ children }) => {
         throw new Error('Signup failed - no user or session returned');
       }
 
-      // 2. Set session first so subsequent requests are authenticated
-      setSession(data.session);
-      persist('tradz_session', data.session);
+      // 2. Set the session in Supabase client (this enables auto-refresh)
+      if (data.session.access_token && data.session.refresh_token) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        
+        if (sessionError) {
+          console.warn('Failed to set Supabase session:', sessionError);
+        } else {
+          console.log('✅ Supabase session set successfully');
+        }
+      }
 
-      // 3. Now fetch the full profile with balance (this will work because session is set)
+      // 3. Set session first so subsequent requests are authenticated
+      const sessionToStore = {
+        ...data.session,
+        access_token: data.session.access_token || data.session.token || data.token,
+        user: data.user
+      };
+      
+      setSession(sessionToStore);
+      persist('tradz_session', sessionToStore);
+
+      // 4. Now fetch the full profile with balance (this will work because session is set)
       try {
         const profileRes = await onboardingService.getProfile(data.user.id);
         
@@ -100,7 +123,10 @@ export const UserProvider = ({ children }) => {
           country: userData.country,
           balance: profileRes.profile?.balance || 10000.00,
           kycStatus: profileRes.profile?.kyc_status || 'unverified',
-          email: userData.email
+          email: userData.email,
+          profit: profileRes.profile?.profit || 0,
+          total_holdings: profileRes.profile?.total_holdings || 0,
+          portfolio_value: profileRes.profile?.portfolio_value || 0,
         };
         
         setUser(userState);
@@ -142,18 +168,44 @@ export const UserProvider = ({ children }) => {
     setLoading(true);
     setAuthError(null);
     try {
-      // 1. Login
+      // 1. Login via backend
       const data = await authService.login(credentials);
       
       if (!data.user || !data.session) {
         throw new Error('Login failed - no user or session returned');
       }
 
-      // 2. Set session first
-      setSession(data.session);
-      persist('tradz_session', data.session);
+      // 2. Set the session in Supabase client (this enables auto-refresh)
+      if (data.session.access_token && data.session.refresh_token) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+        
+        if (sessionError) {
+          console.warn('Failed to set Supabase session:', sessionError);
+        } else {
+          console.log('✅ Supabase session set successfully');
+        }
+      }
 
-      // 3. Fetch full profile with balance
+      // 3. Store session in our custom storage
+      const sessionToStore = {
+        ...data.session,
+        access_token: data.session.access_token || data.session.token || data.token,
+        user: data.user
+      };
+      
+      console.log('💾 Storing session with token:', {
+        hasAccessToken: !!sessionToStore.access_token,
+        hasRefreshToken: !!sessionToStore.refresh_token,
+        expiresAt: sessionToStore.expires_at ? new Date(sessionToStore.expires_at * 1000) : 'N/A'
+      });
+
+      setSession(sessionToStore);
+      persist('tradz_session', sessionToStore);
+
+      // 4. Fetch full profile with balance
       try {
         const profileRes = await onboardingService.getProfile(data.user.id);
         
@@ -163,6 +215,9 @@ export const UserProvider = ({ children }) => {
           country: profileRes.profile?.country,
           balance: profileRes.profile?.balance || 10000.00,
           kycStatus: profileRes.profile?.kyc_status || 'unverified',
+          profit: profileRes.profile?.profit || 0,
+          total_holdings: profileRes.profile?.total_holdings || 0,
+          portfolio_value: profileRes.profile?.portfolio_value || 0,
         };
 
         setUser(userState);

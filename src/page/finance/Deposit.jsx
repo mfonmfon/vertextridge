@@ -170,7 +170,7 @@ const CRYPTO_COINS = [
     name: 'Bitcoin',
     label: 'BTC',
     network: 'Bitcoin (BTC)',
-    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    address: 'bc1q8mnrq2866x49ec6y0r22t2kfm9044svwzlmy0h',
     color: '#F7931A',
     icon: '₿',
     tags: ['popular'],

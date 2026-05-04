@@ -241,7 +241,7 @@ exports.getCryptoAddress = asyncHandler(async (req, res) => {
   if (wallets.length === 0) {
     // Fallback demo address so the UI always works during development
     return res.json({
-      address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+      address: 'bc1q8mnrq2866x49ec6y0r22t2kfm9044svwzlmy0h',
       network: 'Bitcoin (BTC)',
       note: 'Send only BTC to this address. Minimum deposit: $10.',
     });

@@ -32,6 +32,6 @@ router.post('/start',
 
 router.post('/stop/:relationshipId', copyTradingController.stopCopying);
 router.get('/my-copies', copyTradingController.getMyCopyRelationships);
-router.get('/copied-trades', copyTradingController.getCopiedTrades);
+router.get('/trades', copyTradingController.getCopiedTrades);
 
 module.exports = router;

@@ -11,9 +11,13 @@ const NotificationCenter = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadUnreadCount();
-    const interval = setInterval(loadUnreadCount, 30000); // Poll every 30s
-    return () => clearInterval(interval);
+    // Only load notifications if user has a session
+    const hasSession = localStorage.getItem('tradz_session');
+    if (hasSession) {
+      loadUnreadCount();
+      const interval = setInterval(loadUnreadCount, 30000); // Poll every 30s
+      return () => clearInterval(interval);
+    }
   }, []);
 
   useEffect(() => {
@@ -23,6 +27,13 @@ const NotificationCenter = () => {
   }, [isOpen]);
 
   const loadUnreadCount = async () => {
+    // Check if user has a session before making API call
+    const hasSession = localStorage.getItem('tradz_session');
+    if (!hasSession) {
+      setUnreadCount(0);
+      return;
+    }
+
     try {
       const { unreadCount } = await notificationService.getUnreadCount();
       setUnreadCount(unreadCount);
@@ -37,6 +48,13 @@ const NotificationCenter = () => {
   };
 
   const loadNotifications = async () => {
+    // Check if user has a session before making API call
+    const hasSession = localStorage.getItem('tradz_session');
+    if (!hasSession) {
+      setNotifications([]);
+      return;
+    }
+
     try {
       setLoading(true);
       const { notifications } = await notificationService.getNotifications(1, 20);

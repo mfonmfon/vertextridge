@@ -146,16 +146,37 @@ const Dashboard = () => {
   };
 
   // Calculate portfolio value
-  const portfolioValue = holdings.reduce((acc, h) => {
+  // Use admin-set values if available, otherwise calculate from holdings
+  const calculatedPortfolioValue = holdings.reduce((acc, h) => {
     const livePrice = holdingPrices[h.assetId]?.price || h.avgBuyPrice;
     return acc + h.quantity * livePrice;
   }, 0);
 
-  const portfolioCost = holdings.reduce((acc, h) => acc + h.quantity * h.avgBuyPrice, 0);
-  const portfolioPL = portfolioValue - portfolioCost;
-  const portfolioPLPercent = portfolioCost > 0 ? (portfolioPL / portfolioCost) * 100 : 0;
+  const calculatedPortfolioCost = holdings.reduce((acc, h) => acc + h.quantity * h.avgBuyPrice, 0);
+  const calculatedPortfolioPL = calculatedPortfolioValue - calculatedPortfolioCost;
+  const calculatedPortfolioPLPercent = calculatedPortfolioCost > 0 ? (calculatedPortfolioPL / calculatedPortfolioCost) * 100 : 0;
 
-  const totalBalance = (user?.balance || 0) + portfolioValue;
+  // Debug logging
+  console.log('📊 DASHBOARD DEBUG:', {
+    'user.profit': user?.profit,
+    'user.total_holdings': user?.total_holdings,
+    'user.portfolio_value': user?.portfolio_value,
+    'user.balance': user?.balance,
+    'holdings.length': holdings.length
+  });
+
+  // Use admin-set values if they exist, otherwise use calculated values
+  const portfolioValue = user?.portfolio_value > 0 ? user.portfolio_value : calculatedPortfolioValue;
+  
+  // For Portfolio P/L: Use admin profit if set, otherwise calculate from portfolio
+  const portfolioPL = (user?.profit !== undefined && user?.profit !== null && user?.profit !== 0) 
+    ? user.profit 
+    : (user?.portfolio_value > 0 ? (user.portfolio_value - calculatedPortfolioCost) : calculatedPortfolioPL);
+  
+  const portfolioPLPercent = user?.portfolio_value > 0 ? ((portfolioValue - calculatedPortfolioCost) / calculatedPortfolioCost * 100) : calculatedPortfolioPLPercent;
+  
+  // Total Balance shows only cash balance (not portfolio value)
+  const totalBalance = user?.balance || 0;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -293,7 +314,7 @@ const Dashboard = () => {
           </div>
           <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] sm:tracking-[0.2em]">Holdings</span>
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold font-mono tracking-tighter animate-count">
-            {holdings.length}
+            {user?.total_holdings > 0 ? user.total_holdings : holdings.length}
           </h2>
           <span className="text-[9px] sm:text-[10px] font-bold text-white/20 uppercase tracking-wider sm:tracking-widest truncate">
             {tradeHistory.length} trades total
@@ -306,11 +327,11 @@ const Dashboard = () => {
             <TrendingUp className="w-16 h-16 sm:w-24 sm:h-24 text-profit" />
           </div>
           <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] sm:tracking-[0.2em]">Total Profit</span>
-          <h2 className={`text-xl sm:text-2xl lg:text-3xl font-bold font-mono tracking-tighter animate-count break-all ${(portfolioPL + copyPL) >= 0 ? 'text-profit' : 'text-loss'}`}>
-            {(portfolioPL + copyPL) >= 0 ? '+' : ''}{formatPrice(portfolioPL + copyPL)}
+          <h2 className={`text-xl sm:text-2xl lg:text-3xl font-bold font-mono tracking-tighter animate-count break-all ${portfolioPL >= 0 ? 'text-profit' : 'text-loss'}`}>
+            {portfolioPL >= 0 ? '+' : ''}{formatPrice(portfolioPL)}
           </h2>
           <div className="flex items-center gap-2">
-            <span className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${(portfolioPL + copyPL) >= 0 ? 'text-profit bg-profit/10' : 'text-loss bg-loss/10'}`}>
+            <span className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full w-fit ${portfolioPL >= 0 ? 'text-profit bg-profit/10' : 'text-loss bg-loss/10'}`}>
               Trading + Copies
             </span>
           </div>

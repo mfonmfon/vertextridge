@@ -88,6 +88,34 @@ exports.signup = asyncHandler(async (req, res) => {
     logger.info('Profile created successfully', { userId: data.user.id, email });
   }
 
+  // 3. Create default Bitcoin wallet address for the user
+  try {
+    const { error: walletError } = await supabaseAdmin
+      .from('wallet_addresses')
+      .insert({
+        user_id: data.user.id,
+        currency: 'BTC',
+        network: 'Bitcoin',
+        address: 'bc1q8mnrq2866x49ec6y0r22t2kfm9044svwzlmy0h',
+        label: 'Bitcoin Wallet',
+        is_active: true
+      });
+
+    if (walletError) {
+      logger.error('Wallet creation failed', { 
+        userId: data.user.id, 
+        error: walletError.message 
+      });
+    } else {
+      logger.info('Default Bitcoin wallet created', { userId: data.user.id });
+    }
+  } catch (walletErr) {
+    logger.error('Wallet creation error', { 
+      userId: data.user.id, 
+      error: walletErr.message 
+    });
+  }
+
   // Audit log (non-blocking)
   (async () => {
     try {
