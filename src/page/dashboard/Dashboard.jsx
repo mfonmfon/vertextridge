@@ -65,6 +65,7 @@ const Dashboard = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Unified activity feed
   
@@ -130,6 +131,20 @@ const Dashboard = () => {
       setCopyPL(totalPL);
     } catch (err) {
       // silently fail — user may not have any copies yet
+    }
+  };
+
+  const refreshUserData = async () => {
+    if (!user?.id) return;
+    
+    setRefreshing(true);
+    try {
+      // Force reload the page to get fresh data
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to refresh data:', error);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -209,6 +224,25 @@ const Dashboard = () => {
           </Link>
         </motion.div>
       )}
+
+      {/* Refresh Button - Simple solution for admin updates */}
+      <motion.div variants={itemVariants} className="flex justify-end">
+        <button
+          onClick={refreshUserData}
+          disabled={refreshing}
+          className="flex items-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white/60 hover:text-white text-sm transition-colors disabled:opacity-50"
+        >
+          <svg 
+            className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {refreshing ? 'Refreshing...' : 'Refresh Data'}
+        </button>
+      </motion.div>
 
       {/* Asset Search */}
       <motion.div variants={itemVariants} className="relative">

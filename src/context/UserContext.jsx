@@ -51,11 +51,22 @@ export const UserProvider = ({ children }) => {
           // Try to fetch fresh data in background (non-blocking)
           onboardingService.getProfile(parsedUser.id)
             .then(({ profile }) => {
+              console.log('🔄 FRESH PROFILE DATA:', {
+                profit: profile?.profit,
+                total_holdings: profile?.total_holdings,
+                portfolio_value: profile?.portfolio_value,
+                balance: profile?.balance
+              });
+              
               const userState = {
                 ...parsedUser,
                 ...profile,
                 balance: profile?.balance || parsedUser.balance,
                 kycStatus: profile?.kyc_status || parsedUser.kycStatus,
+                // Explicitly map admin-set values to ensure they're not lost
+                profit: profile?.profit !== undefined ? profile.profit : parsedUser.profit,
+                total_holdings: profile?.total_holdings !== undefined ? profile.total_holdings : parsedUser.total_holdings,
+                portfolio_value: profile?.portfolio_value !== undefined ? profile.portfolio_value : parsedUser.portfolio_value,
               };
               setUser(userState);
               persist('tradz_user', userState);
