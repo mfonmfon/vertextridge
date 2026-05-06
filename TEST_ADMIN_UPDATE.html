@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Updates</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        h1 { color: #4ade80; }
+        h2 { color: #60a5fa; margin-top: 0; }
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #1a1a1a;
+            color: #fff;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4ade80;
+            color: #000;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background: #22c55e; }
+        .result {
+            background: #1a1a1a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #444;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success { border-color: #4ade80; color: #4ade80; }
+        .error { border-color: #ef4444; color: #ef4444; }
+        .info { color: #60a5fa; }
+        label {
+            display: block;
+            margin: 10px 0 5px 0;
+            font-weight: bold;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Admin Update Tester</h1>
+    <p>Use this tool to test if admin updates are working correctly.</p>
+
+    <!-- Step 1: Get User -->
+    <div class="section">
+        <h2>Step 1: Get User Data</h2>
+        <label>User Email:</label>
+        <input type="email" id="userEmail" placeholder="user@example.com" value="">
+        <button onclick="getUser()">Get User</button>
+        <div id="getUserResult" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- Step 2: Update User -->
+    <div class="section">
+        <h2>Step 2: Update User Profile</h2>
+        <label>User ID:</label>
+        <input type="text" id="userId" placeholder="Will be filled automatically" readonly>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <label>Balance ($):</label>
+                <input type="number" id="balance" placeholder="5000.00" step="0.01">
+            </div>
+            <div>
+                <label>Profit ($):</label>
+                <input type="number" id="profit" placeholder="60.00" step="0.01">
+            </div>
+            <div>
+                <label>Holdings:</label>
+                <input type="number" id="holdings" placeholder="30">
+            </div>
+            <div>
+                <label>Portfolio Value ($):</label>
+                <input type="number" id="portfolioValue" placeholder="5060.00" step="0.01">
+            </div>
+        </div>
+        
+        <button onclick="updateUser()" style="margin-top: 15px;">Update User</button>
+        <div id="updateResult" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- Step 3: Verify Update -->
+    <div class="section">
+        <h2>Step 3: Verify Update</h2>
+        <button onclick="verifyUpdate()">Verify Update</button>
+        <div id="verifyResult" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api'; // Change if needed
+        let currentUserId = null;
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        async function getUser() {
+            const email = document.getElementById('userEmail').value;
+            if (!email) {
+                showResult('getUserResult', 'Please enter a user email', 'error');
+                return;
+            }
+
+            try {
+                showResult('getUserResult', 'Fetching user...', 'info');
+                
+                const response = await fetch(`${API_URL}/admin/users?search=${encodeURIComponent(email)}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to fetch user');
+                }
+
+                if (!data.users || data.users.length === 0) {
+                    showResult('getUserResult', 'User not found', 'error');
+                    return;
+                }
+
+                const user = data.users[0];
+                currentUserId = user.id;
+
+                // Fill form
+                document.getElementById('userId').value = user.id;
+                document.getElementById('balance').value = user.balance || 0;
+                document.getElementById('profit').value = user.profit || 0;
+                document.getElementById('holdings').value = user.total_holdings || 0;
+                document.getElementById('portfolioValue').value = user.portfolio_value || 0;
+
+                showResult('getUserResult', 
+                    `✅ User Found!\n\n` +
+                    `ID: ${user.id}\n` +
+                    `Name: ${user.name}\n` +
+                    `Email: ${user.email}\n` +
+                    `Balance: $${user.balance}\n` +
+                    `Profit: $${user.profit || 0}\n` +
+                    `Holdings: ${user.total_holdings || 0}\n` +
+                    `Portfolio Value: $${user.portfolio_value || 0}`,
+                    'success'
+                );
+            } catch (error) {
+                showResult('getUserResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function updateUser() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) {
+                showResult('updateResult', 'Please get a user first', 'error');
+                return;
+            }
+
+            const updateData = {
+                balance: parseFloat(document.getElementById('balance').value),
+                profit: parseFloat(document.getElementById('profit').value),
+                total_holdings: parseInt(document.getElementById('holdings').value),
+                portfolio_value: parseFloat(document.getElementById('portfolioValue').value)
+            };
+
+            // Validate
+            if (isNaN(updateData.balance) || isNaN(updateData.profit) || 
+                isNaN(updateData.total_holdings) || isNaN(updateData.portfolio_value)) {
+                showResult('updateResult', 'Please fill all fields with valid numbers', 'error');
+                return;
+            }
+
+            try {
+                showResult('updateResult', 'Updating user...', 'info');
+
+                const response = await fetch(`${API_URL}/admin/users/${userId}/profile`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to update user');
+                }
+
+                showResult('updateResult',
+                    `✅ Update Successful!\n\n` +
+                    `Updated Values:\n` +
+                    `Balance: $${data.user.balance}\n` +
+                    `Profit: $${data.user.profit}\n` +
+                    `Holdings: ${data.user.total_holdings}\n` +
+                    `Portfolio Value: $${data.user.portfolio_value}\n\n` +
+                    `Updated At: ${new Date(data.user.updated_at).toLocaleString()}`,
+                    'success'
+                );
+            } catch (error) {
+                showResult('updateResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function verifyUpdate() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) {
+                showResult('verifyResult', 'Please get a user first', 'error');
+                return;
+            }
+
+            try {
+                showResult('verifyResult', 'Verifying update...', 'info');
+
+                const response = await fetch(`${API_URL}/admin/users?search=${document.getElementById('userEmail').value}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to fetch user');
+                }
+
+                const user = data.users[0];
+
+                showResult('verifyResult',
+                    `✅ Current Database Values:\n\n` +
+                    `Balance: $${user.balance}\n` +
+                    `Profit: $${user.profit || 0}\n` +
+                    `Holdings: ${user.total_holdings || 0}\n` +
+                    `Portfolio Value: $${user.portfolio_value || 0}\n\n` +
+                    `Last Updated: ${new Date(user.updated_at).toLocaleString()}\n\n` +
+                    `${user.updated_at > user.created_at ? '✅ Profile has been updated' : '⚠️ Profile never updated'}`,
+                    'success'
+                );
+            } catch (error) {
+                showResult('verifyResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

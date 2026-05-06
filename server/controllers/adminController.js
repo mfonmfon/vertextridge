@@ -149,6 +149,12 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   const updates = req.body;
 
+  console.log('🔧 ADMIN UPDATE REQUEST:', {
+    userId,
+    updates,
+    timestamp: new Date().toISOString()
+  });
+
   // Remove fields that shouldn't be updated directly
   delete updates.id;
   delete updates.created_at;
@@ -164,17 +170,33 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
     .eq('id', userId)
     .single();
 
-  if (fetchError) throw fetchError;
+  if (fetchError) {
+    console.error('❌ Failed to fetch existing user:', fetchError);
+    throw fetchError;
+  }
+
+  console.log('📋 EXISTING USER DATA:', {
+    balance: existingUser.balance,
+    profit: existingUser.profit,
+    total_holdings: existingUser.total_holdings,
+    portfolio_value: existingUser.portfolio_value
+  });
 
   // Only include fields that exist in the table
   const allowedUpdates = {};
   const existingColumns = Object.keys(existingUser);
   
+  console.log('📝 EXISTING COLUMNS:', existingColumns);
+  
   for (const [key, value] of Object.entries(updates)) {
     if (existingColumns.includes(key)) {
       allowedUpdates[key] = value;
+    } else {
+      console.warn(`⚠️ Column '${key}' does not exist in profiles table`);
     }
   }
+
+  console.log('✅ ALLOWED UPDATES:', allowedUpdates);
 
   const { data, error } = await supabaseAdmin
     .from('profiles')
@@ -183,7 +205,17 @@ exports.updateUserProfile = asyncHandler(async (req, res) => {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('❌ Failed to update user profile:', error);
+    throw error;
+  }
+
+  console.log('🎉 PROFILE UPDATED SUCCESSFULLY:', {
+    balance: data.balance,
+    profit: data.profit,
+    total_holdings: data.total_holdings,
+    portfolio_value: data.portfolio_value
+  });
 
   await logActivity(req.user?.id || 'admin', 'UPDATE_PROFILE', { 
     userId, 

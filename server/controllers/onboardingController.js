@@ -72,10 +72,12 @@ exports.getProfile = asyncHandler(async (req, res) => {
 
   // Debug logging
   console.log('📤 SERVER: Sending profile data:', {
+    userId,
     profit: data?.profit,
     total_holdings: data?.total_holdings,
     portfolio_value: data?.portfolio_value,
-    balance: data?.balance
+    balance: data?.balance,
+    updated_at: data?.updated_at
   });
 
   res.status(200).json({

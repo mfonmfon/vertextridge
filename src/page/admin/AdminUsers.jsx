@@ -185,20 +185,65 @@ const AdminUsers = () => {
   const handleUpdateProfile = async () => {
     if (!selectedUser) return;
 
+    // Validate inputs
+    const balance = parseFloat(editFormData.balance);
+    const profit = parseFloat(editFormData.profit);
+    const total_holdings = parseInt(editFormData.total_holdings);
+    const portfolio_value = parseFloat(editFormData.portfolio_value);
+
+    // Check for invalid numbers
+    if (isNaN(balance) || balance < 0) {
+      toast.error('Balance must be a valid positive number');
+      return;
+    }
+
+    if (isNaN(profit)) {
+      toast.error('Profit must be a valid number');
+      return;
+    }
+
+    if (isNaN(total_holdings) || total_holdings < 0) {
+      toast.error('Holdings must be a valid positive number');
+      return;
+    }
+
+    if (isNaN(portfolio_value) || portfolio_value < 0) {
+      toast.error('Portfolio value must be a valid positive number');
+      return;
+    }
+
+    const updateData = {
+      name: editFormData.name.trim(),
+      country: editFormData.country.trim(),
+      balance: balance,
+      profit: profit,
+      total_holdings: total_holdings,
+      portfolio_value: portfolio_value
+    };
+
+    console.log('🔧 ADMIN FORM: Updating user profile', {
+      userId: selectedUser.id,
+      updateData,
+      originalData: {
+        balance: selectedUser.balance,
+        profit: selectedUser.profit,
+        total_holdings: selectedUser.total_holdings,
+        portfolio_value: selectedUser.portfolio_value
+      }
+    });
+
     try {
-      await adminService.updateUserProfile(selectedUser.id, {
-        name: editFormData.name,
-        country: editFormData.country,
-        balance: parseFloat(editFormData.balance),
-        profit: parseFloat(editFormData.profit),
-        total_holdings: parseInt(editFormData.total_holdings),
-        portfolio_value: parseFloat(editFormData.portfolio_value)
+      const response = await adminService.updateUserProfile(selectedUser.id, updateData);
+      console.log('✅ ADMIN FORM: Update successful', response);
+      toast.success('✅ User profile updated! Changes will appear on user dashboard within 5 seconds.', {
+        duration: 5000,
+        icon: '🎉'
       });
-      toast.success('User profile updated successfully');
       setShowEditModal(false);
       loadUsers();
     } catch (error) {
-      toast.error('Failed to update profile');
+      console.error('❌ ADMIN FORM: Update failed', error);
+      toast.error(`Failed to update profile: ${error.message || 'Unknown error'}`);
     }
   };
 

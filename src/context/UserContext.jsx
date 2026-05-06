@@ -19,10 +19,18 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
 
-  // Load all persisted state on mount - SIMPLE VERSION, NO EXPIRATION CHECKS
+  // Load all persisted state on mount and set up auto-refresh for admin updates
   useEffect(() => {
+    let refreshInterval;
+    
     const initAuth = async () => {
       setLoading(true);
+      
+      // Safety timeout - ensure loading doesn't hang forever
+      const loadingTimeout = setTimeout(() => {
+        console.warn('⚠️ Loading timeout - forcing loading to false');
+        setLoading(false);
+      }, 3000); // 3 second timeout
       
       // Always check localStorage first for immediate restoration
       const savedSession = localStorage.getItem('tradz_session');
@@ -33,9 +41,11 @@ export const UserProvider = ({ children }) => {
           const session = JSON.parse(savedSession);
           const parsedUser = JSON.parse(savedUser);
           
-          // Set user and session immediately - NO CHECKS
+          // Set user and session immediately
           setSession(session);
           setUser(parsedUser);
+          clearTimeout(loadingTimeout); // Clear timeout since we have user
+          setLoading(false); // Set loading to false immediately after restoring user
           console.log('✅ User restored from localStorage:', parsedUser.email);
           
           // Try to restore Supabase session in background
@@ -48,42 +58,60 @@ export const UserProvider = ({ children }) => {
             });
           }
           
-          // Try to fetch fresh data in background (non-blocking)
-          onboardingService.getProfile(parsedUser.id)
-            .then(({ profile }) => {
-              console.log('🔄 FRESH PROFILE DATA:', {
+          // Function to refresh user data from server
+          const refreshUserData = async () => {
+            try {
+              const { profile } = await onboardingService.getProfile(parsedUser.id);
+              console.log('🔄 AUTO-REFRESH PROFILE DATA:', {
                 profit: profile?.profit,
                 total_holdings: profile?.total_holdings,
                 portfolio_value: profile?.portfolio_value,
-                balance: profile?.balance
+                balance: profile?.balance,
+                updated_at: profile?.updated_at
               });
               
               const userState = {
                 ...parsedUser,
                 ...profile,
-                balance: profile?.balance || parsedUser.balance,
+                // Always use fresh values from server - admin updates take priority
+                balance: profile?.balance !== undefined ? parseFloat(profile.balance) : parsedUser.balance,
                 kycStatus: profile?.kyc_status || parsedUser.kycStatus,
-                // Explicitly map admin-set values to ensure they're not lost
-                profit: profile?.profit !== undefined ? profile.profit : parsedUser.profit,
-                total_holdings: profile?.total_holdings !== undefined ? profile.total_holdings : parsedUser.total_holdings,
-                portfolio_value: profile?.portfolio_value !== undefined ? profile.portfolio_value : parsedUser.portfolio_value,
+                profit: profile?.profit !== undefined ? parseFloat(profile.profit) : (parsedUser.profit || 0),
+                total_holdings: profile?.total_holdings !== undefined ? parseInt(profile.total_holdings) : (parsedUser.total_holdings || 0),
+                portfolio_value: profile?.portfolio_value !== undefined ? parseFloat(profile.portfolio_value) : (parsedUser.portfolio_value || 0),
               };
               setUser(userState);
               persist('tradz_user', userState);
-            })
-            .catch(err => {
+            } catch (err) {
               console.warn('Could not fetch fresh profile:', err);
-            });
+            }
+          };
+
+          // Initial refresh in background (non-blocking)
+          refreshUserData();
+          
+          // Set up auto-refresh every 5 seconds to catch admin updates quickly
+          refreshInterval = setInterval(refreshUserData, 5000);
             
         } catch (err) {
           console.error('Failed to restore session:', err);
+          clearTimeout(loadingTimeout);
+          setLoading(false);
         }
+      } else {
+        clearTimeout(loadingTimeout);
+        setLoading(false);
       }
-
-      setLoading(false);
     };
 
     initAuth();
+    
+    // Cleanup on unmount
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
   }, []);
 
   // Persist helpers
@@ -446,6 +474,38 @@ export const UserProvider = ({ children }) => {
 
   const isWatchlisted = (assetId) => watchlist.includes(assetId);
 
+  // Manual refresh function that can be called from components
+  const refreshUserProfile = async () => {
+    if (!user?.id) return false;
+    
+    try {
+      const { profile } = await onboardingService.getProfile(user.id);
+      console.log('🔄 MANUAL REFRESH:', {
+        profit: profile?.profit,
+        total_holdings: profile?.total_holdings,
+        portfolio_value: profile?.portfolio_value,
+        balance: profile?.balance
+      });
+      
+      const userState = {
+        ...user,
+        ...profile,
+        // Always use fresh values from server - admin updates take priority
+        balance: profile?.balance !== undefined ? parseFloat(profile.balance) : user.balance,
+        kycStatus: profile?.kyc_status || user.kycStatus,
+        profit: profile?.profit !== undefined ? parseFloat(profile.profit) : (user.profit || 0),
+        total_holdings: profile?.total_holdings !== undefined ? parseInt(profile.total_holdings) : (user.total_holdings || 0),
+        portfolio_value: profile?.portfolio_value !== undefined ? parseFloat(profile.portfolio_value) : (user.portfolio_value || 0),
+      };
+      setUser(userState);
+      persist('tradz_user', userState);
+      return true;
+    } catch (err) {
+      console.warn('Manual refresh failed:', err);
+      return false;
+    }
+  };
+
   return (
     <UserContext.Provider
       value={{
@@ -468,6 +528,7 @@ export const UserProvider = ({ children }) => {
         executeTrade,
         toggleWatchlist,
         isWatchlisted,
+        refreshUserProfile,
       }}
     >
       {children}

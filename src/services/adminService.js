@@ -31,10 +31,13 @@ export const adminService = {
   },
 
   async updateUserProfile(userId, updates) {
-    return request(`/admin/users/${userId}/profile`, {
+    console.log('🔧 ADMIN SERVICE: Updating user profile', { userId, updates });
+    const response = await request(`/admin/users/${userId}/profile`, {
       method: 'PATCH',
       body: updates
     });
+    console.log('✅ ADMIN SERVICE: Profile update response', response);
+    return response;
   },
 
   async updateKYCStatus(userId, kycStatus) {

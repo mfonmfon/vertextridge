@@ -25,6 +25,7 @@ WHERE balance > 0 OR profit != 0 OR total_holdings > 0 OR portfolio_value > 0
 ORDER BY updated_at DESC
 LIMIT 10;
 
+
 -- 3. Check a specific user (replace 'USER_ID_HERE' with actual user ID)
 -- SELECT 
 --   id,

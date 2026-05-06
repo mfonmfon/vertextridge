@@ -11,6 +11,7 @@ import {
   ArrowDownLeft,
   Search,
   Star,
+  RefreshCw,
 } from 'lucide-react';
 import { Card, Button } from '../../component/shared/UI';
 import { useUser } from '../../context/UserContext';
@@ -19,6 +20,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { fetchTrending, fetchPrices, formatPrice, formatChange, searchAssets } from '../../services/marketService';
 import { copyTradingService } from '../../services/copyTradingService';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
+import AutoRefreshIndicator from '../../components/AutoRefreshIndicator';
 
 // ────────────────────────────────────
 // Mini Sparkline Component
@@ -55,7 +57,7 @@ const Sparkline = ({ data, positive }) => {
 // Dashboard
 // ────────────────────────────────────
 const Dashboard = () => {
-  const { user, holdings, tradeHistory, transactions } = useUser();
+  const { user, holdings, tradeHistory, transactions, refreshUserProfile } = useUser();
   const navigate = useNavigate();
   const [trending, setTrending] = useState([]);
   const [holdingPrices, setHoldingPrices] = useState({});
@@ -139,8 +141,11 @@ const Dashboard = () => {
     
     setRefreshing(true);
     try {
-      // Force reload the page to get fresh data
-      window.location.reload();
+      const success = await refreshUserProfile();
+      if (success) {
+        // Don't reload the page, just let the context update propagate
+        console.log('✅ User data refreshed successfully');
+      }
     } catch (error) {
       console.error('Failed to refresh data:', error);
     } finally {
@@ -161,7 +166,9 @@ const Dashboard = () => {
   };
 
   // Calculate portfolio value
-  // Use admin-set values if available, otherwise calculate from holdings
+  // PRIORITY: Use admin-set values if available, otherwise calculate from holdings
+  
+  // Calculate values from actual holdings
   const calculatedPortfolioValue = holdings.reduce((acc, h) => {
     const livePrice = holdingPrices[h.assetId]?.price || h.avgBuyPrice;
     return acc + h.quantity * livePrice;
@@ -177,21 +184,28 @@ const Dashboard = () => {
     'user.total_holdings': user?.total_holdings,
     'user.portfolio_value': user?.portfolio_value,
     'user.balance': user?.balance,
-    'holdings.length': holdings.length
+    'holdings.length': holdings.length,
+    'calculatedPortfolioValue': calculatedPortfolioValue,
+    'calculatedPortfolioPL': calculatedPortfolioPL
   });
 
-  // Use admin-set values if they exist, otherwise use calculated values
-  const portfolioValue = user?.portfolio_value > 0 ? user.portfolio_value : calculatedPortfolioValue;
+  // ADMIN VALUES TAKE PRIORITY - Use admin-set values if they exist and are non-zero
+  // This allows admin to override calculated values
+  const hasAdminPortfolioValue = user?.portfolio_value !== undefined && user?.portfolio_value !== null;
+  const hasAdminProfit = user?.profit !== undefined && user?.profit !== null;
+  const hasAdminHoldings = user?.total_holdings !== undefined && user?.total_holdings !== null;
   
-  // For Portfolio P/L: Use admin profit if set, otherwise calculate from portfolio
-  const portfolioPL = (user?.profit !== undefined && user?.profit !== null && user?.profit !== 0) 
-    ? user.profit 
-    : (user?.portfolio_value > 0 ? (user.portfolio_value - calculatedPortfolioCost) : calculatedPortfolioPL);
+  const portfolioValue = hasAdminPortfolioValue ? parseFloat(user.portfolio_value) : calculatedPortfolioValue;
+  const portfolioPL = hasAdminProfit ? parseFloat(user.profit) : calculatedPortfolioPL;
+  const totalHoldings = hasAdminHoldings ? parseInt(user.total_holdings) : holdings.length;
   
-  const portfolioPLPercent = user?.portfolio_value > 0 ? ((portfolioValue - calculatedPortfolioCost) / calculatedPortfolioCost * 100) : calculatedPortfolioPLPercent;
+  // Calculate percentage based on which values we're using
+  const portfolioPLPercent = hasAdminProfit && hasAdminPortfolioValue && portfolioValue > 0
+    ? (portfolioPL / portfolioValue) * 100
+    : calculatedPortfolioPLPercent;
   
   // Total Balance shows only cash balance (not portfolio value)
-  const totalBalance = user?.balance || 0;
+  const totalBalance = user?.balance !== undefined ? parseFloat(user.balance) : 0;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -209,6 +223,9 @@ const Dashboard = () => {
       animate="show"
       className="flex flex-col gap-6 lg:gap-8 pb-24 lg:pb-8"
     >
+      {/* Auto-refresh indicator */}
+      <AutoRefreshIndicator />
+
       {/* KYC Alert */}
       {user?.kycStatus !== 'verified' && (
         <motion.div
@@ -225,8 +242,14 @@ const Dashboard = () => {
         </motion.div>
       )}
 
-      {/* Refresh Button - Simple solution for admin updates */}
-      <motion.div variants={itemVariants} className="flex justify-end">
+      {/* Refresh Button - with auto-refresh info */}
+      <motion.div variants={itemVariants} className="flex justify-between items-center">
+        <div className="text-xs text-white/40">
+          <span className="inline-flex items-center gap-1">
+            <RefreshCw className="w-3 h-3" />
+            Auto-syncing every 5 seconds
+          </span>
+        </div>
         <button
           onClick={refreshUserData}
           disabled={refreshing}
@@ -240,7 +263,7 @@ const Dashboard = () => {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          {refreshing ? 'Refreshing...' : 'Refresh Data'}
+          {refreshing ? 'Refreshing...' : 'Refresh Now'}
         </button>
       </motion.div>
 
@@ -348,7 +371,7 @@ const Dashboard = () => {
           </div>
           <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] sm:tracking-[0.2em]">Holdings</span>
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold font-mono tracking-tighter animate-count">
-            {user?.total_holdings > 0 ? user.total_holdings : holdings.length}
+            {totalHoldings}
           </h2>
           <span className="text-[9px] sm:text-[10px] font-bold text-white/20 uppercase tracking-wider sm:tracking-widest truncate">
             {tradeHistory.length} trades total
