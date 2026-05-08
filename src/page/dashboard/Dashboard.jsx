@@ -197,15 +197,19 @@ const Dashboard = () => {
   
   const portfolioValue = hasAdminPortfolioValue ? parseFloat(user.portfolio_value) : calculatedPortfolioValue;
   const portfolioPL = hasAdminProfit ? parseFloat(user.profit) : calculatedPortfolioPL;
-  const totalHoldings = hasAdminHoldings ? parseInt(user.total_holdings) : holdings.length;
+  const totalHoldingsCount = hasAdminHoldings ? parseInt(user.total_holdings) : holdings.length;
   
   // Calculate percentage based on which values we're using
   const portfolioPLPercent = hasAdminProfit && hasAdminPortfolioValue && portfolioValue > 0
-    ? (portfolioPL / portfolioValue) * 100
+    ? (portfolioPL / (portfolioValue - portfolioPL || 1)) * 100 // Relative to cost
     : calculatedPortfolioPLPercent;
   
-  // Total Balance shows only cash balance (not portfolio value)
-  const totalBalance = user?.balance !== undefined ? parseFloat(user.balance) : 0;
+  // Accounting Logic:
+  // 1. Available Balance = Cash in account
+  const availableBalance = user?.balance !== undefined ? parseFloat(user.balance) : 0;
+  
+  // 2. Total Balance = Available Balance (Cash) + Portfolio Value (Assets)
+  const totalAccountValue = availableBalance + portfolioValue;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -343,14 +347,14 @@ const Dashboard = () => {
           </div>
           <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] sm:tracking-[0.2em]">Total Balance</span>
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold font-mono tracking-tighter animate-count break-all">
-            ${totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ${totalAccountValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </h2>
           <div className="flex items-center gap-2">
-            <span className="text-[9px] sm:text-[10px] font-bold text-white/20 uppercase tracking-wider sm:tracking-widest truncate">Cash: ${(user?.balance || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+            <span className="text-[9px] sm:text-[10px] font-bold text-white/20 uppercase tracking-wider sm:tracking-widest truncate">Cash: ${availableBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
           </div>
         </Card>
 
-        {/* Daily P/L */}
+        {/* Portfolio P/L */}
         <Card className="flex flex-col gap-2 sm:gap-3 relative overflow-hidden group p-4 sm:p-6">
           <div className="absolute top-0 right-0 p-4 sm:p-6 opacity-[0.03] group-hover:scale-110 transition-transform">
             {portfolioPL >= 0 ? <TrendingUp className="w-16 h-16 sm:w-24 sm:h-24 text-profit" /> : <TrendingDown className="w-16 h-16 sm:w-24 sm:h-24 text-loss" />}
@@ -364,17 +368,17 @@ const Dashboard = () => {
           </span>
         </Card>
 
-        {/* Holdings Count */}
+        {/* Holdings */}
         <Card className="flex flex-col gap-2 sm:gap-3 relative overflow-hidden group p-4 sm:p-6">
           <div className="absolute top-0 right-0 p-4 sm:p-6 opacity-[0.03] group-hover:scale-110 transition-transform">
             <BarChart3 className="w-16 h-16 sm:w-24 sm:h-24 text-primary" />
           </div>
           <span className="text-[9px] sm:text-[10px] font-bold text-white/30 uppercase tracking-[0.15em] sm:tracking-[0.2em]">Holdings</span>
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold font-mono tracking-tighter animate-count">
-            {totalHoldings}
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold font-mono tracking-tighter animate-count break-all">
+            ${portfolioValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </h2>
           <span className="text-[9px] sm:text-[10px] font-bold text-white/20 uppercase tracking-wider sm:tracking-widest truncate">
-            {tradeHistory.length} trades total
+            {totalHoldingsCount} Assets total
           </span>
         </Card>
 
