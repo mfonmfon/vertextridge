@@ -46,7 +46,7 @@ export const UserProvider = ({ children }) => {
           setUser(parsedUser);
           clearTimeout(loadingTimeout); // Clear timeout since we have user
           setLoading(false); // Set loading to false immediately after restoring user
-          console.log('✅ User restored from localStorage:', parsedUser.email);
+          console.log(' User restored from localStorage:', parsedUser.email);
           
           // Try to restore Supabase session in background
           if (session.access_token && session.refresh_token) {
@@ -58,39 +58,56 @@ export const UserProvider = ({ children }) => {
             });
           }
           
-          // Function to refresh user data from server
+          // Only store the userId (stable string) - NOT the full parsedUser object
+          // This prevents the stale-closure bug where old values get spread as the base
+          const userId = parsedUser.id;
+          
           const refreshUserData = async () => {
             try {
-              const { profile } = await onboardingService.getProfile(parsedUser.id);
-              console.log('🔄 AUTO-REFRESH PROFILE DATA:', {
-                profit: profile?.profit,
-                total_holdings: profile?.total_holdings,
-                portfolio_value: profile?.portfolio_value,
-                balance: profile?.balance,
-                updated_at: profile?.updated_at
+              const { profile } = await onboardingService.getProfile(userId);
+              if (!profile) return;
+
+              console.log('🔄 AUTO-REFRESH from server:', {
+                balance: profile.balance,
+                profit: profile.profit,
+                total_holdings: profile.total_holdings,
+                portfolio_value: profile.portfolio_value,
+                updated_at: profile.updated_at
               });
               
-              const userState = {
-                ...parsedUser,
-                ...profile,
-                // Always use fresh values from server - admin updates take priority
-                balance: profile?.balance !== undefined ? parseFloat(profile.balance) : parsedUser.balance,
-                kycStatus: profile?.kyc_status || parsedUser.kycStatus,
-                profit: profile?.profit !== undefined ? parseFloat(profile.profit) : (parsedUser.profit || 0),
-                total_holdings: profile?.total_holdings !== undefined ? parseInt(profile.total_holdings) : (parsedUser.total_holdings || 0),
-                portfolio_value: profile?.portfolio_value !== undefined ? parseFloat(profile.portfolio_value) : (parsedUser.portfolio_value || 0),
-              };
-              setUser(userState);
-              persist('tradz_user', userState);
+              // CRITICAL: Use functional setUser so we always merge onto the CURRENT
+              // live state — not a stale closure captured at mount time
+              setUser(currentUser => {
+                if (!currentUser) return currentUser;
+                const merged = {
+                  ...currentUser,
+                  // Overwrite financial fields with fresh server values
+                  balance: (profile.balance !== undefined && profile.balance !== null)
+                    ? parseFloat(profile.balance)
+                    : currentUser.balance,
+                  kycStatus: profile.kyc_status || currentUser.kycStatus,
+                  profit: (profile.profit !== undefined && profile.profit !== null)
+                    ? parseFloat(profile.profit)
+                    : (currentUser.profit || 0),
+                  total_holdings: (profile.total_holdings !== undefined && profile.total_holdings !== null)
+                    ? parseInt(profile.total_holdings)
+                    : (currentUser.total_holdings || 0),
+                  portfolio_value: (profile.portfolio_value !== undefined && profile.portfolio_value !== null)
+                    ? parseFloat(profile.portfolio_value)
+                    : (currentUser.portfolio_value || 0),
+                  name: profile.name || currentUser.name,
+                  country: profile.country || currentUser.country,
+                };
+                localStorage.setItem('tradz_user', JSON.stringify(merged));
+                return merged;
+              });
             } catch (err) {
               console.warn('Could not fetch fresh profile:', err);
             }
           };
 
-          // Initial refresh in background (non-blocking)
+          // Immediate refresh + every 5 seconds
           refreshUserData();
-          
-          // Set up auto-refresh every 5 seconds to catch admin updates quickly
           refreshInterval = setInterval(refreshUserData, 5000);
             
         } catch (err) {
@@ -480,25 +497,38 @@ export const UserProvider = ({ children }) => {
     
     try {
       const { profile } = await onboardingService.getProfile(user.id);
-      console.log('🔄 MANUAL REFRESH:', {
-        profit: profile?.profit,
-        total_holdings: profile?.total_holdings,
-        portfolio_value: profile?.portfolio_value,
-        balance: profile?.balance
+      if (!profile) return false;
+
+      console.log('🔄 MANUAL REFRESH from server:', {
+        balance: profile.balance,
+        profit: profile.profit,
+        total_holdings: profile.total_holdings,
+        portfolio_value: profile.portfolio_value
       });
       
-      const userState = {
-        ...user,
-        ...profile,
-        // Always use fresh values from server - admin updates take priority
-        balance: profile?.balance !== undefined ? parseFloat(profile.balance) : user.balance,
-        kycStatus: profile?.kyc_status || user.kycStatus,
-        profit: profile?.profit !== undefined ? parseFloat(profile.profit) : (user.profit || 0),
-        total_holdings: profile?.total_holdings !== undefined ? parseInt(profile.total_holdings) : (user.total_holdings || 0),
-        portfolio_value: profile?.portfolio_value !== undefined ? parseFloat(profile.portfolio_value) : (user.portfolio_value || 0),
-      };
-      setUser(userState);
-      persist('tradz_user', userState);
+      setUser(currentUser => {
+        if (!currentUser) return currentUser;
+        const merged = {
+          ...currentUser,
+          balance: (profile.balance !== undefined && profile.balance !== null)
+            ? parseFloat(profile.balance)
+            : currentUser.balance,
+          kycStatus: profile.kyc_status || currentUser.kycStatus,
+          profit: (profile.profit !== undefined && profile.profit !== null)
+            ? parseFloat(profile.profit)
+            : (currentUser.profit || 0),
+          total_holdings: (profile.total_holdings !== undefined && profile.total_holdings !== null)
+            ? parseInt(profile.total_holdings)
+            : (currentUser.total_holdings || 0),
+          portfolio_value: (profile.portfolio_value !== undefined && profile.portfolio_value !== null)
+            ? parseFloat(profile.portfolio_value)
+            : (currentUser.portfolio_value || 0),
+          name: profile.name || currentUser.name,
+          country: profile.country || currentUser.country,
+        };
+        localStorage.setItem('tradz_user', JSON.stringify(merged));
+        return merged;
+      });
       return true;
     } catch (err) {
       console.warn('Manual refresh failed:', err);

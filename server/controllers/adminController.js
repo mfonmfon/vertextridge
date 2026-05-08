@@ -114,7 +114,7 @@ exports.updateUserBalance = asyncHandler(async (req, res) => {
   const { userId } = req.params;
   const { balance, reason } = req.body;
 
-  if (balance === undefined || balance < 0) {
+  if (balance === undefined || balance === null || isNaN(parseFloat(balance)) || parseFloat(balance) < 0) {
     return res.status(400).json({ error: 'Invalid balance amount' });
   }
 

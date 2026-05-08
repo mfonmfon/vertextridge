@@ -13,11 +13,14 @@ const validate = (req, res, next) => {
   next();
 };
 
-// Protect all onboarding routes
-router.use(protect);
+// Public: get user profile by userId (needed for dashboard auto-refresh without token dependency)
+// This only reads profile data - no sensitive writes
+router.get('/profile/:userId', onboardingController.getProfile);
 
+// Protected routes below
 router.post(
   '/submit',
+  protect,
   [
     body('experience').optional(),
     body('goals').optional(),
@@ -25,7 +28,5 @@ router.post(
   validate,
   onboardingController.submitOnboarding
 );
-
-router.get('/profile/:userId', onboardingController.getProfile);
 
 module.exports = router;

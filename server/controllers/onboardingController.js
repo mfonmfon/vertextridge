@@ -1,4 +1,4 @@
-const { supabase } = require('../config/supabase');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 const Logger = require('../utils/logger');
 const { asyncHandler } = require('../utils/errorHandler');
 
@@ -59,7 +59,8 @@ exports.getProfile = asyncHandler(async (req, res) => {
 
   logger.debug('Fetching profile', { userId });
 
-  const { data, error } = await supabase
+  // Use supabaseAdmin to bypass RLS — ensures admin-updated fields are always returned
+  const { data, error } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('id', userId)
@@ -70,8 +71,7 @@ exports.getProfile = asyncHandler(async (req, res) => {
     throw error;
   }
 
-  // Debug logging
-  console.log('📤 SERVER: Sending profile data:', {
+  logger.debug('Profile sent to client', {
     userId,
     profit: data?.profit,
     total_holdings: data?.total_holdings,
