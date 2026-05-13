@@ -11,14 +11,48 @@ const searchCache = new NodeCache({ stdTTL: 120 });
 
 const COINGECKO_BASE = 'https://api.coingecko.com/api/v3';
 
-// Helper: fetch with error handling
+// Helper: fetch with error handling and Binance fallback
 async function geckoFetch(url) {
-  const res = await fetch(`${COINGECKO_BASE}${url}`);
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`CoinGecko API error ${res.status}: ${text}`);
+  try {
+    const res = await fetch(`${COINGECKO_BASE}${url}`);
+    if (!res.ok) {
+      if (res.status === 429) {
+        console.warn('CoinGecko rate limit hit, attempting fallback...');
+        throw new Error('RATE_LIMIT');
+      }
+      const text = await res.text();
+      throw new Error(`CoinGecko API error ${res.status}: ${text}`);
+    }
+    return res.json();
+  } catch (err) {
+    if (err.message === 'RATE_LIMIT' || err.message.includes('fetch failed')) {
+      // If it's a price request, we can try Binance as fallback
+      if (url.includes('/coins/markets')) {
+        console.log('Using Binance fallback for market data');
+        return await binanceFallback();
+      }
+    }
+    throw err;
   }
-  return res.json();
+}
+
+// Binance Fallback for top coins
+async function binanceFallback() {
+  const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'DOTUSDT', 'MATICUSDT'];
+  const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`);
+  const data = await res.json();
+  
+  return data.map(item => ({
+    id: item.symbol.replace('USDT', '').toLowerCase(),
+    symbol: item.symbol.replace('USDT', ''),
+    name: item.symbol.replace('USDT', ''),
+    image: `https://assets.coingecko.com/coins/images/1/large/${item.symbol.replace('USDT', '').toLowerCase()}.png`, // Still use CG images if possible
+    current_price: parseFloat(item.lastPrice),
+    price_change_percentage_24h: parseFloat(item.priceChangePercent),
+    market_cap: 0,
+    total_volume: parseFloat(item.volume),
+    sparkline_in_7d: { price: [] }
+  }));
 }
 
 // ──────────────────────────────────────────────

@@ -22,6 +22,7 @@ import Settings from '../page/settings/Settings';
 import AdminDashboard from '../page/admin/AdminDashboard';
 import AdminLogin from '../page/admin/AdminLogin';
 import AdminUsers from '../page/admin/AdminUsers';
+import AdminTraders from '../page/admin/AdminTraders';
 import AdminSettings from '../page/admin/AdminSettings';
 import AdminLogs from '../page/admin/AdminLogs';
 import AdminDebug from '../page/admin/AdminDebug';
@@ -244,6 +245,14 @@ const VERTEX_RIDGE_MARKET_ROUTER = createBrowserRouter([
     element: (
       <AdminLayout>
         <AdminUsers />
+      </AdminLayout>
+    ),
+  },
+  {
+    path: "/admin/traders",
+    element: (
+      <AdminLayout>
+        <AdminTraders />
       </AdminLayout>
     ),
   },

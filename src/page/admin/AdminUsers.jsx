@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Edit2, Trash2, Check, X, Download, RefreshCw, Wallet } from 'lucide-react';
+import { Search, Edit2, Trash2, Check, X, Download, RefreshCw, Wallet, Users } from 'lucide-react';
 import { Card, Button, Input } from '../../component/shared/UI';
 import { adminService } from '../../services/adminService';
 import { motion } from 'framer-motion';
@@ -37,6 +37,16 @@ const AdminUsers = () => {
     label: ''
   });
   const [userWallets, setUserWallets] = useState([]);
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [copyUser, setCopyUser] = useState(null);
+  const [masterTraders, setMasterTraders] = useState([]);
+  const [copyFormData, setCopyFormData] = useState({
+    masterId: '',
+    allocatedAmount: '1000',
+    copyPercentage: '100'
+  });
+  const [userCopyRelationships, setUserCopyRelationships] = useState([]);
+  const [loadingCopyData, setLoadingCopyData] = useState(false);
 
   // Check auth
   useEffect(() => {
@@ -331,6 +341,72 @@ const AdminUsers = () => {
     toast.success('Users exported successfully');
   };
 
+  const openCopyModal = async (user) => {
+    setCopyUser(user);
+    setCopyFormData({
+      masterId: '',
+      allocatedAmount: '1000',
+      copyPercentage: '100'
+    });
+    setShowCopyModal(true);
+    setLoadingCopyData(true);
+
+    try {
+      // Load user's current copy relationships
+      const relResponse = await adminService.getUserCopyRelationships(user.id);
+      setUserCopyRelationships(relResponse.relationships || []);
+
+      // Load master traders if not already loaded
+      if (masterTraders.length === 0) {
+        const response = await adminService.getMasterTraders();
+        setMasterTraders(response.traders || []);
+      }
+    } catch (error) {
+      console.error('Failed to load copy trading data:', error);
+      toast.error('Failed to load copy trading data');
+    } finally {
+      setLoadingCopyData(false);
+    }
+  };
+
+  const handleStopCopyRelationship = async (relationshipId) => {
+    if (!confirm('Are you sure you want to stop this copy trading relationship? Funds will be returned to the user balance.')) {
+      return;
+    }
+
+    try {
+      await adminService.stopUserCopyRelationship(relationshipId);
+      toast.success('Copy trading stopped successfully');
+      
+      // Refresh relationships
+      const relResponse = await adminService.getUserCopyRelationships(copyUser.id);
+      setUserCopyRelationships(relResponse.relationships || []);
+      loadUsers(); // Refresh user balance in list
+    } catch (error) {
+      toast.error('Failed to stop copy trading');
+    }
+  };
+
+  const handleAssignCopyTrader = async () => {
+    if (!copyUser || !copyFormData.masterId) {
+      toast.error('Please select a master trader');
+      return;
+    }
+
+    try {
+      await adminService.assignCopyTrader(
+        copyUser.id,
+        copyFormData.masterId,
+        parseFloat(copyFormData.allocatedAmount),
+        parseFloat(copyFormData.copyPercentage)
+      );
+      toast.success('Copy trader assigned successfully');
+      setShowCopyModal(false);
+    } catch (error) {
+      toast.error('Failed to assign copy trader');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -512,6 +588,13 @@ const AdminUsers = () => {
                             title="Edit user"
                           >
                             <Edit2 className="w-3 h-3 md:w-4 md:h-4" />
+                          </button>
+                          <button
+                            onClick={() => openCopyModal(user)}
+                            className="p-2 text-primary hover:bg-primary/10 rounded"
+                            title="Assign copy trader"
+                          >
+                            <Users className="w-3 h-3 md:w-4 md:h-4" />
                           </button>
                           <button
                             onClick={() => openWalletModal(user)}
@@ -810,6 +893,135 @@ const AdminUsers = () => {
                 <strong className="text-primary">Note:</strong> Generated addresses are for demonstration purposes. 
                 In production, integrate with actual blockchain wallet generation services.
               </p>
+            </div>
+          </Card>
+        </div>
+      )}
+      {/* Copy Trader Modal */}
+      {showCopyModal && copyUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-2xl p-6 my-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold">Manage Copy Trading</h2>
+                <p className="text-white/60 text-sm mt-1">
+                  For {copyUser.name} ({copyUser.email})
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCopyModal(false)}
+                className="text-white/60 hover:text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Current Copy Relationships */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Active Copy Relationships
+              </h3>
+              
+              {loadingCopyData ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              ) : userCopyRelationships.filter(r => r.status === 'active').length === 0 ? (
+                <div className="bg-white/5 border border-white/10 rounded-xl p-6 text-center text-white/40">
+                  User is not currently copying any traders
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {userCopyRelationships.filter(r => r.status === 'active').map((rel) => (
+                    <div key={rel.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-bold text-primary">
+                            {rel.master_traders?.display_name || 'Unknown Trader'}
+                          </span>
+                          {rel.master_traders?.verified && (
+                            <Check className="w-3 h-3 bg-profit text-dark rounded-full p-0.5" />
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/40">
+                          <span>Allocated: <strong className="text-white">${rel.allocated_amount}</strong></span>
+                          <span>Profit: <strong className={rel.total_profit >= 0 ? 'text-profit' : 'text-loss'}>
+                            {rel.total_profit >= 0 ? '+' : ''}{rel.total_profit || 0}
+                          </strong></span>
+                          <span>Started: {new Date(rel.started_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <Button 
+                        variant="danger" 
+                        className="px-4 py-2 text-xs"
+                        onClick={() => handleStopCopyRelationship(rel.id)}
+                      >
+                        Stop
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Assign New Trader Section */}
+            <div className="border-t border-white/10 pt-6">
+              <h3 className="text-lg font-semibold mb-4">Assign New Master Trader</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-white/40 uppercase tracking-widest pl-1">Select Master Trader</label>
+                  <select
+                    value={copyFormData.masterId}
+                    onChange={(e) => setCopyFormData({ ...copyFormData, masterId: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-white focus:outline-none focus:border-primary/50 transition-all"
+                  >
+                    <option value="">Choose a trader...</option>
+                    {masterTraders.filter(t => t.is_active).map(trader => (
+                      <option key={trader.id} value={trader.id}>
+                        {trader.display_name} ({trader.win_rate}% Win Rate)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <Input
+                    label="Allocated Amount ($)"
+                    type="number"
+                    value={copyFormData.allocatedAmount}
+                    onChange={(e) => setCopyFormData({ ...copyFormData, allocatedAmount: e.target.value })}
+                    placeholder="1000.00"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="space-y-2">
+                  <Input
+                    label="Copy Percentage (%)"
+                    type="number"
+                    value={copyFormData.copyPercentage}
+                    onChange={(e) => setCopyFormData({ ...copyFormData, copyPercentage: e.target.value })}
+                    placeholder="100"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    onClick={handleAssignCopyTrader}
+                    className="w-full"
+                  >
+                    Confirm Assignment
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl">
+                <p className="text-xs text-white/60">
+                  <strong className="text-primary">Important:</strong> Assigning a trader will automatically deduct the allocated amount from the user's available balance.
+                </p>
+              </div>
             </div>
           </Card>
         </div>

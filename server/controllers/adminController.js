@@ -595,5 +595,264 @@ exports.getUserWallets = asyncHandler(async (req, res) => {
   res.json({ wallets: data || [] });
 });
 
-// NO LONGER NEEDED - All users use the same fixed Bitcoin address
-// function generateCryptoAddress() removed
+/**
+ * Assign a copy trader to a user manually
+ */
+exports.assignCopyTrader = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const { masterId, allocatedAmount, copyPercentage = 100, status = 'active' } = req.body;
+
+  if (!masterId || !allocatedAmount) {
+    return res.status(400).json({ error: 'Master ID and allocated amount are required' });
+  }
+
+  // Check if master trader exists
+  const { data: trader, error: traderError } = await supabaseAdmin
+    .from('master_traders')
+    .select('id, display_name')
+    .eq('id', masterId)
+    .single();
+
+  if (traderError || !trader) {
+    return res.status(404).json({ error: 'Master trader not found' });
+  }
+
+  // Create relationship using supabaseAdmin to bypass user checks
+  const { data, error } = await supabaseAdmin
+    .from('copy_relationships')
+    .insert({
+      copier_id: userId,
+      master_id: masterId,
+      allocated_amount: parseFloat(allocatedAmount),
+      copy_percentage: copyPercentage,
+      status: status,
+      started_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Update master trader followers count
+  const { data: currentTrader } = await supabase
+    .from('master_traders')
+    .select('total_followers')
+    .eq('id', masterId)
+    .single();
+    
+  await supabase
+    .from('master_traders')
+    .update({
+      total_followers: (currentTrader?.total_followers || 0) + 1
+    })
+    .eq('id', masterId);
+
+  await logActivity(req.user?.id || 'admin', 'ASSIGN_COPY_TRADER', { 
+    userId, 
+    masterId, 
+    allocatedAmount 
+  }, userId);
+
+  res.json({ relationship: data, message: 'Copy trader assigned successfully' });
+});
+
+/**
+ * Get all master traders (for management)
+ */
+exports.getAllTraders = asyncHandler(async (req, res) => {
+  const { data, error } = await supabaseAdmin
+    .from('master_traders')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  res.json({ traders: data || [] });
+});
+
+/**
+ * Create a new master trader
+ */
+exports.createTrader = asyncHandler(async (req, res) => {
+  const traderData = req.body;
+
+  // Set defaults for numeric fields
+  const payload = {
+    display_name: traderData.display_name,
+    bio: traderData.bio || '',
+    total_followers: 0,
+    total_profit: 0,
+    win_rate: parseFloat(traderData.win_rate || 0),
+    risk_score: parseInt(traderData.risk_score || 3),
+    verified: traderData.verified === true,
+    is_active: traderData.is_active !== false, // default to active
+    total_trades: 0,
+    max_drawdown: parseFloat(traderData.max_drawdown || 0),
+    min_copy_amount: parseFloat(traderData.min_copy_amount || 100),
+    performance_fee: parseFloat(traderData.performance_fee || 15),
+    specialization: Array.isArray(traderData.specialization) ? traderData.specialization : [],
+    created_at: new Date().toISOString()
+  };
+
+  const { data, error } = await supabaseAdmin
+    .from('master_traders')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  await logActivity(req.user?.id || 'admin', 'CREATE_MASTER_TRADER', { traderId: data.id });
+
+  res.status(201).json({ trader: data, message: 'Master trader created successfully' });
+});
+
+/**
+ * Update an existing master trader
+ */
+exports.updateTrader = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+
+  // Prevent updating internal stats directly through this endpoint if needed, 
+  // but for admin management we allow most fields.
+  delete updates.id;
+  delete updates.created_at;
+
+  const { data, error } = await supabaseAdmin
+    .from('master_traders')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  await logActivity(req.user?.id || 'admin', 'UPDATE_MASTER_TRADER', { traderId: id, updates });
+
+  res.json({ trader: data, message: 'Master trader updated successfully' });
+});
+
+/**
+ * Delete a master trader (soft delete by deactivating or hard delete)
+ */
+exports.deleteTrader = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  // Check if trader has active followers
+  const { count, error: countError } = await supabaseAdmin
+    .from('copy_relationships')
+    .select('id', { count: 'exact', head: true })
+    .eq('master_id', id)
+    .eq('status', 'active');
+
+  if (countError) throw countError;
+
+  if (count > 0) {
+    return res.status(400).json({ 
+      error: 'Cannot delete trader with active followers. Please stop all copy relationships first or deactivate the trader instead.' 
+    });
+  }
+
+  const { error } = await supabaseAdmin
+    .from('master_traders')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+
+  await logActivity(req.user?.id || 'admin', 'DELETE_MASTER_TRADER', { traderId: id });
+
+  res.json({ message: 'Master trader deleted successfully' });
+});
+
+/**
+ * Get all copy trading relationships for a specific user (Admin view)
+ */
+exports.getUserCopyRelationships = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  const { data, error } = await supabaseAdmin
+    .from('copy_relationships')
+    .select(`
+      *,
+      master_traders!copy_relationships_master_id_fkey (
+        display_name,
+        verified
+      )
+    `)
+    .eq('copier_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  res.json({ relationships: data || [] });
+});
+
+/**
+ * Stop a user's copy relationship manually (Admin action)
+ */
+exports.stopUserCopyRelationship = asyncHandler(async (req, res) => {
+  const { relationshipId } = req.params;
+
+  // Get relationship details
+  const { data: relationship, error: relError } = await supabaseAdmin
+    .from('copy_relationships')
+    .select('*')
+    .eq('id', relationshipId)
+    .single();
+
+  if (relError || !relationship) {
+    return res.status(404).json({ error: 'Relationship not found' });
+  }
+
+  if (relationship.status !== 'active') {
+    return res.status(400).json({ error: 'Relationship is not active' });
+  }
+
+  const userId = relationship.copier_id;
+  const masterId = relationship.master_id;
+
+  // Calculate final amount to return (allocated + profit)
+  const finalAmount = parseFloat(relationship.allocated_amount) + parseFloat(relationship.total_profit || 0);
+
+  // Return funds to user balance
+  const { error: balanceError } = await supabaseAdmin.rpc('update_balance', {
+    p_user_id: userId,
+    p_amount: finalAmount,
+    p_operation: 'add'
+  });
+
+  if (balanceError) throw balanceError;
+
+  // Update relationship status
+  const { error: updateError } = await supabaseAdmin
+    .from('copy_relationships')
+    .update({
+      status: 'stopped',
+      stopped_at: new Date().toISOString()
+    })
+    .eq('id', relationshipId);
+
+  if (updateError) throw updateError;
+
+  // Update master trader followers count
+  const { data: currentTrader } = await supabaseAdmin
+    .from('master_traders')
+    .select('total_followers')
+    .eq('id', masterId)
+    .single();
+
+  await supabaseAdmin
+    .from('master_traders')
+    .update({
+      total_followers: Math.max((currentTrader?.total_followers || 0) - 1, 0)
+    })
+    .eq('id', masterId);
+
+  await logActivity(req.user?.id || 'admin', 'STOP_USER_COPY_TRADING', { relationshipId, userId, masterId }, userId);
+
+  res.json({ message: 'Copy trading relationship stopped successfully', returnedAmount: finalAmount });
+});
+
+module.exports = exports;

@@ -149,11 +149,11 @@ function getMockTrendingData() {
       symbol: 'BTC',
       name: 'Bitcoin',
       image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-      price: 43250.50,
+      price: 63250.50,
       change24h: 2.45,
-      marketCap: 847000000000,
-      volume: 15000000000,
-      sparkline: [42000, 42500, 43000, 43250, 43100, 43250, 43300, 43250],
+      marketCap: 1247000000000,
+      volume: 35000000000,
+      sparkline: [62000, 62500, 63000, 63250, 63100, 63250, 63300, 63250],
       marketCapRank: 1
     },
     {

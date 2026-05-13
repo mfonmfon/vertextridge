@@ -24,6 +24,15 @@ router.delete('/users/:userId', superAdminProtect, adminController.deleteUser); 
 router.post('/users/:userId/wallet', adminController.generateWalletAddress);
 router.get('/users/:userId/wallets', adminController.getUserWallets);
 
+// Copy trading management
+router.post('/users/:userId/copy-trading', adminController.assignCopyTrader);
+router.get('/users/:userId/copy-trading', adminController.getUserCopyRelationships);
+router.post('/copy-trading/:relationshipId/stop', adminController.stopUserCopyRelationship);
+router.get('/traders', adminController.getAllTraders);
+router.post('/traders', adminController.createTrader);
+router.patch('/traders/:id', adminController.updateTrader);
+router.delete('/traders/:id', superAdminProtect, adminController.deleteTrader);
+
 // Platform settings
 router.get('/settings', adminController.getSettings);
 router.put('/settings', superAdminProtect, adminController.updateSetting); // Only super admin can update settings

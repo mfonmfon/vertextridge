@@ -70,7 +70,6 @@ const Dashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   // Unified activity feed
-  
   const recentActivity = [
     ...tradeHistory.map(t => ({ ...t, activityType: 'trade' })),
     ...transactions.map(tx => ({ 
@@ -79,7 +78,24 @@ const Dashboard = () => {
       total: tx.amount,
       timestamp: tx.timestamp 
     }))
-  ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 8);
+  ];
+
+  // Add synthetic profit activity if no history but profit exists
+  if (recentActivity.length === 0 && user?.profit !== 0) {
+    recentActivity.push({
+      id: 'synthetic-profit',
+      activityType: 'finance',
+      type: 'profit',
+      amount: user?.profit,
+      status: 'completed',
+      timestamp: new Date().toISOString(),
+      label: 'Portfolio Profit'
+    });
+  }
+
+  const sortedActivity = recentActivity
+    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    .slice(0, 8);
 
   useEffect(() => {
     loadMarketData();
@@ -450,6 +466,29 @@ const Dashboard = () => {
                     );
                   })}
                 </div>
+              ) : user?.portfolio_value > 0 ? (
+                /* Synthetic Holdings Display for Admin Overrides */
+                <div className="flex flex-col divide-y divide-white/5">
+                  <div className="p-4 sm:p-6 lg:p-8 flex items-center gap-4 bg-primary/5">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Wallet className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-sm">Diversified Portfolio</h4>
+                      <p className="text-[10px] text-white/40">Portfolio managed by Admin</p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="font-bold text-sm font-mono">${parseFloat(user.portfolio_value).toLocaleString()}</span>
+                      <span className="text-[10px] text-profit font-bold">Managed Assets</span>
+                    </div>
+                  </div>
+                  <div className="p-8 sm:p-12 text-center">
+                    <p className="text-white/20 text-xs">Trade more assets to see individual breakdown</p>
+                    <Link to="/markets" className="mt-4 inline-block">
+                      <Button className="px-6 py-2 text-xs">Go to Markets</Button>
+                    </Link>
+                  </div>
+                </div>
               ) : (
                 <div className="p-8 sm:p-12 lg:p-16 flex flex-col items-center justify-center gap-3 sm:gap-4 text-center">
                   <BarChart3 className="w-10 h-10 sm:w-12 sm:h-12 text-white/5" />
@@ -517,11 +556,11 @@ const Dashboard = () => {
                 <h3 className="text-base font-bold">Recent Activity</h3>
                 <Link to="/funds" className="text-primary text-[10px] font-bold uppercase tracking-widest hover:underline">View All</Link>
               </div>
-              {recentActivity.length > 0 ? (
+              {sortedActivity.length > 0 ? (
                 <div className="flex flex-col divide-y divide-white/5">
-                  {recentActivity.map((activity) => {
+                  {sortedActivity.map((activity) => {
                     const isTrade = activity.activityType === 'trade';
-                    const isPositive = isTrade ? activity.type === 'sell' : activity.type === 'deposit';
+                    const isPositive = isTrade ? activity.type === 'sell' : (activity.type === 'deposit' || activity.type === 'profit');
                     
                     return (
                       <div key={activity.id} className="p-4 lg:p-5 flex items-center gap-3">
@@ -531,7 +570,7 @@ const Dashboard = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="font-bold text-xs capitalize">
-                              {isTrade ? `${activity.type} ${activity.symbol}` : activity.type}
+                              {activity.label || (isTrade ? `${activity.type} ${activity.symbol}` : activity.type)}
                             </span>
                           </div>
                           <span className="text-[10px] text-white/30">

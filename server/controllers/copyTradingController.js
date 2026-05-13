@@ -165,10 +165,16 @@ exports.startCopying = asyncHandler(async (req, res) => {
   }
 
   // Update master trader followers count
-  const { error: followerError } = await supabase
+  const { data: currentTrader } = await supabase
+    .from('master_traders')
+    .select('total_followers')
+    .eq('id', masterId)
+    .single();
+    
+  await supabase
     .from('master_traders')
     .update({
-      total_followers: supabase.raw('total_followers + 1')
+      total_followers: (currentTrader?.total_followers || 0) + 1
     })
     .eq('id', masterId);
 

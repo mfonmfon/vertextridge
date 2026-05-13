@@ -80,5 +80,52 @@ export const adminService = {
   // Activity logs
   async getActivityLogs(page = 1, limit = 50) {
     return request(`/admin/activity-logs?page=${page}&limit=${limit}`);
+  },
+
+  // Copy trading management
+  async getMasterTraders() {
+    return request('/copy-trading/masters');
+  },
+
+  async assignCopyTrader(userId, masterId, allocatedAmount, copyPercentage = 100) {
+    return request(`/admin/users/${userId}/copy-trading`, {
+      method: 'POST',
+      body: { masterId, allocatedAmount, copyPercentage }
+    });
+  },
+
+  async getUserCopyRelationships(userId) {
+    return request(`/admin/users/${userId}/copy-trading`);
+  },
+
+  async stopUserCopyRelationship(relationshipId) {
+    return request(`/admin/copy-trading/${relationshipId}/stop`, {
+      method: 'POST'
+    });
+  },
+
+  // Master Trader management
+  async getAllTraders() {
+    return request('/admin/traders');
+  },
+
+  async createTrader(traderData) {
+    return request('/admin/traders', {
+      method: 'POST',
+      body: traderData
+    });
+  },
+
+  async updateTrader(traderId, updates) {
+    return request(`/admin/traders/${traderId}`, {
+      method: 'PATCH',
+      body: updates
+    });
+  },
+
+  async deleteTrader(traderId) {
+    return request(`/admin/traders/${traderId}`, {
+      method: 'DELETE'
+    });
   }
 };
