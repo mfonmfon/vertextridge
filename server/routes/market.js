@@ -18,19 +18,17 @@ async function geckoFetch(url) {
     if (!res.ok) {
       if (res.status === 429) {
         console.warn('CoinGecko rate limit hit, attempting fallback...');
-        throw new Error('RATE_LIMIT');
+      } else {
+        console.warn(`CoinGecko API error ${res.status}, attempting fallback...`);
       }
-      const text = await res.text();
-      throw new Error(`CoinGecko API error ${res.status}: ${text}`);
+      throw new Error('GECKO_ERROR');
     }
     return res.json();
   } catch (err) {
-    if (err.message === 'RATE_LIMIT' || err.message.includes('fetch failed')) {
-      // If it's a price request, we can try Binance as fallback
-      if (url.includes('/coins/markets')) {
-        console.log('Using Binance fallback for market data');
-        return await binanceFallback();
-      }
+    // If it's a price request, we can try Binance as fallback for ANY error
+    if (url.includes('/coins/markets')) {
+      console.log('Using Binance fallback for market data due to:', err.message);
+      return await binanceFallback();
     }
     throw err;
   }
@@ -38,21 +36,43 @@ async function geckoFetch(url) {
 
 // Binance Fallback for top coins
 async function binanceFallback() {
-  const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'DOTUSDT', 'MATICUSDT'];
+  const symbolMap = {
+    'BTCUSDT': { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
+    'ETHUSDT': { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', image: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' },
+    'BNBUSDT': { id: 'binancecoin', symbol: 'BNB', name: 'BNB', image: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png' },
+    'SOLUSDT': { id: 'solana', symbol: 'SOL', name: 'Solana', image: 'https://assets.coingecko.com/coins/images/4128/large/solana.png' },
+    'ADAUSDT': { id: 'cardano', symbol: 'ADA', name: 'Cardano', image: 'https://assets.coingecko.com/coins/images/975/large/cardano.png' },
+    'XRPUSDT': { id: 'ripple', symbol: 'XRP', name: 'XRP', image: 'https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png' },
+    'DOTUSDT': { id: 'polkadot', symbol: 'DOT', name: 'Polkadot', image: 'https://assets.coingecko.com/coins/images/12171/large/polkadot.png' },
+    'MATICUSDT': { id: 'polygon', symbol: 'MATIC', name: 'Polygon', image: 'https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png' },
+    'DOGEUSDT': { id: 'dogecoin', symbol: 'DOGE', name: 'Dogecoin', image: 'https://assets.coingecko.com/coins/images/5/large/dogecoin.png' },
+    'AVAXUSDT': { id: 'avalanche-2', symbol: 'AVAX', name: 'Avalanche', image: 'https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png' }
+  };
+
+  const symbols = Object.keys(symbolMap);
   const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`);
   const data = await res.json();
   
-  return data.map(item => ({
-    id: item.symbol.replace('USDT', '').toLowerCase(),
-    symbol: item.symbol.replace('USDT', ''),
-    name: item.symbol.replace('USDT', ''),
-    image: `https://assets.coingecko.com/coins/images/1/large/${item.symbol.replace('USDT', '').toLowerCase()}.png`, // Still use CG images if possible
-    current_price: parseFloat(item.lastPrice),
-    price_change_percentage_24h: parseFloat(item.priceChangePercent),
-    market_cap: 0,
-    total_volume: parseFloat(item.volume),
-    sparkline_in_7d: { price: [] }
-  }));
+  return data.map(item => {
+    const info = symbolMap[item.symbol] || { 
+      id: item.symbol.replace('USDT', '').toLowerCase(),
+      symbol: item.symbol.replace('USDT', ''),
+      name: item.symbol.replace('USDT', ''),
+      image: '' 
+    };
+
+    return {
+      id: info.id,
+      symbol: info.symbol,
+      name: info.name,
+      image: info.image || `https://assets.coingecko.com/coins/images/1/large/${info.id}.png`,
+      current_price: parseFloat(item.lastPrice),
+      price_change_percentage_24h: parseFloat(item.priceChangePercent),
+      market_cap: 0,
+      total_volume: parseFloat(item.volume),
+      sparkline_in_7d: { price: [] }
+    };
+  });
 }
 
 // ──────────────────────────────────────────────

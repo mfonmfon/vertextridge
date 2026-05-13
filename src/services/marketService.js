@@ -1,6 +1,6 @@
 import { request } from './api';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api';
 
 // ──────────────────────────────────────────────
 // Market Data Service
@@ -34,8 +34,20 @@ export async function fetchTrending() {
     console.log('Trending data received:', data.length, 'coins');
     return data;
   } catch (error) {
-    console.error('Error fetching trending:', error);
-    // Fallback to mock data
+    console.error('Error fetching trending, attempting direct fallback:', error);
+    
+    // Attempt direct Binance fallback (skipping backend)
+    try {
+      const binanceData = await binanceDirectFallback();
+      if (binanceData && binanceData.length > 0) {
+        console.log('Using live Binance data for trending fallback');
+        return binanceData;
+      }
+    } catch (fallbackError) {
+      console.error('Binance fallback failed:', fallbackError);
+    }
+
+    // Fallback to mock data as last resort
     console.log('Using mock data fallback');
     return getMockTrendingData();
   }
@@ -49,9 +61,54 @@ export async function fetchPrices(ids) {
     if (!res.ok) throw new Error('Failed to fetch prices');
     return await res.json();
   } catch (error) {
-    console.error('Error fetching prices:', error);
-    return [];
+    console.error('Error fetching prices, attempting direct fallback:', error);
+    
+    try {
+      const binanceData = await binanceDirectFallback();
+      // Filter for requested IDs if possible, or just return top coins
+      return binanceData;
+    } catch (fallbackError) {
+      console.error('Binance price fallback failed:', fallbackError);
+      return [];
+    }
   }
+}
+
+// ──────────────────────────────────────────────
+// Direct Binance Fallback (CORS-friendly)
+// ──────────────────────────────────────────────
+async function binanceDirectFallback() {
+  const symbolMap = {
+    'BTCUSDT': { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
+    'ETHUSDT': { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', image: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' },
+    'USDTUSDC': { id: 'tether', symbol: 'USDT', name: 'Tether', image: 'https://assets.coingecko.com/coins/images/325/large/Tether.png' },
+    'BNBUSDT': { id: 'binancecoin', symbol: 'BNB', name: 'BNB', image: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png' },
+    'SOLUSDT': { id: 'solana', symbol: 'SOL', name: 'Solana', image: 'https://assets.coingecko.com/coins/images/4128/large/solana.png' },
+    'XRPUSDT': { id: 'ripple', symbol: 'XRP', name: 'XRP', image: 'https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png' },
+    'ADAUSDT': { id: 'cardano', symbol: 'ADA', name: 'Cardano', image: 'https://assets.coingecko.com/coins/images/975/large/cardano.png' },
+    'AVAXUSDT': { id: 'avalanche-2', symbol: 'AVAX', name: 'Avalanche', image: 'https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png' },
+    'DOGEUSDT': { id: 'dogecoin', symbol: 'DOGE', name: 'Dogecoin', image: 'https://assets.coingecko.com/coins/images/5/large/dogecoin.png' },
+    'DOTUSDT': { id: 'polkadot', symbol: 'DOT', name: 'Polkadot', image: 'https://assets.coingecko.com/coins/images/12171/large/polkadot.png' }
+  };
+
+  const symbols = Object.keys(symbolMap);
+  const res = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbols=${JSON.stringify(symbols)}`);
+  if (!res.ok) throw new Error('Binance API failed');
+  
+  const data = await res.json();
+  
+  return data.map(item => {
+    const info = symbolMap[item.symbol];
+    return {
+      ...info,
+      price: parseFloat(item.lastPrice),
+      change24h: parseFloat(item.priceChangePercent),
+      marketCap: 0, // Binance doesn't provide MC in this endpoint
+      volume: parseFloat(item.volume),
+      sparkline: [],
+      marketCapRank: 0
+    };
+  });
 }
 
 export async function fetchChart(coinId, days = 7) {
@@ -149,11 +206,11 @@ function getMockTrendingData() {
       symbol: 'BTC',
       name: 'Bitcoin',
       image: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png',
-      price: 63250.50,
-      change24h: 2.45,
-      marketCap: 1247000000000,
-      volume: 35000000000,
-      sparkline: [62000, 62500, 63000, 63250, 63100, 63250, 63300, 63250],
+      price: 80550.25,
+      change24h: 3.12,
+      marketCap: 1580000000000,
+      volume: 42000000000,
+      sparkline: [78000, 78500, 79200, 80000, 80550, 80400, 80550, 80600],
       marketCapRank: 1
     },
     {
@@ -161,8 +218,8 @@ function getMockTrendingData() {
       symbol: 'ETH',
       name: 'Ethereum',
       image: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png',
-      price: 2650.75,
-      change24h: 1.85,
+      price: 3450.75,
+      change24h: 2.45,
       marketCap: 318000000000,
       volume: 8500000000,
       sparkline: [2600, 2620, 2640, 2650, 2645, 2650, 2655, 2650],
@@ -175,8 +232,8 @@ function getMockTrendingData() {
       image: 'https://assets.coingecko.com/coins/images/325/large/Tether.png',
       price: 1.00,
       change24h: 0.01,
-      marketCap: 95000000000,
-      volume: 45000000000,
+      marketCap: 110000000000,
+      volume: 55000000000,
       sparkline: [1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00],
       marketCapRank: 3
     },
@@ -185,11 +242,11 @@ function getMockTrendingData() {
       symbol: 'BNB',
       name: 'BNB',
       image: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png',
-      price: 315.25,
-      change24h: 3.12,
-      marketCap: 48000000000,
-      volume: 1200000000,
-      sparkline: [305, 308, 312, 315, 313, 315, 316, 315],
+      price: 642.25,
+      change24h: 4.15,
+      marketCap: 98000000000,
+      volume: 2500000000,
+      sparkline: [610, 620, 635, 642, 638, 642, 645, 642],
       marketCapRank: 4
     },
     {
@@ -197,11 +254,11 @@ function getMockTrendingData() {
       symbol: 'SOL',
       name: 'Solana',
       image: 'https://assets.coingecko.com/coins/images/4128/large/solana.png',
-      price: 98.45,
-      change24h: 5.67,
-      marketCap: 42000000000,
-      volume: 2100000000,
-      sparkline: [93, 95, 96, 98, 97, 98, 99, 98],
+      price: 185.45,
+      change24h: 6.82,
+      marketCap: 82000000000,
+      volume: 4500000000,
+      sparkline: [172, 175, 178, 185, 182, 185, 188, 185],
       marketCapRank: 5
     },
     {
