@@ -45,15 +45,24 @@ const errorHandler = (err, req, res, next) => {
     // PostgreSQL unique violation
     err.statusCode = 409;
     err.message = 'Resource already exists';
+    err.isOperational = true;
   } else if (err.code === '23503') {
     // PostgreSQL foreign key violation
     err.statusCode = 400;
     err.message = 'Invalid reference';
+    err.isOperational = true;
   } else if (err.code === '23514') {
     // PostgreSQL check violation
     err.statusCode = 400;
     err.message = 'Invalid data';
+    err.isOperational = true;
   }
+
+  // Log all errors to a file for debugging
+  try {
+    const util = require('util');
+    require('fs').appendFileSync('error.log', new Date().toISOString() + ' ERROR: ' + util.inspect(err, { depth: null }) + '\\n');
+  } catch (e) {}
 
   if (process.env.NODE_ENV === 'development') {
     res.status(err.statusCode).json({

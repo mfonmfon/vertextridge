@@ -62,6 +62,7 @@ const TraderDetail = () => {
       try {
         setCopying(true);
         await copyTradingService.startCopying({
+          userId: user.id,
           masterId: trader.id,
           allocatedAmount: parseFloat(copyData.allocatedAmount),
           copyPercentage: parseFloat(copyData.copyPercentage),
@@ -74,13 +75,8 @@ const TraderDetail = () => {
         navigate('/copy-trading/my-copies');
       } catch (error) {
         console.error('Copy trading error:', error);
-        
-        // Handle specific error cases
-        if (error.statusCode === 401 || error.code === 'INVALID_TOKEN' || error.code === 'TOKEN_EXPIRED') {
-          toast.error('Session expired. Please login again.');
-          localStorage.clear();
-          navigate('/login');
-        } else if (error.code === 'INSUFFICIENT_FUNDS') {
+
+        if (error.code === 'INSUFFICIENT_FUNDS') {
           toast.error('Insufficient balance. Please deposit funds first.');
         } else if (error.code === 'ALREADY_COPYING') {
           toast.error('You are already copying this trader.');

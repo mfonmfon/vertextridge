@@ -37,26 +37,21 @@ const protect = async (req, res, next) => {
     // Try to verify token with Supabase using the client
     const { data: { user }, error } = await supabaseClient.auth.getUser(token);
 
-    console.log('Supabase client auth result:', {
-      hasUser: !!user,
-      userId: user?.id,
-      email: user?.email,
-      error: error?.message
-    });
-
     if (error || !user) {
-      // If client validation fails, try with admin client
-      console.log('Client validation failed, trying admin client...');
-      const { data: { user: adminUser }, error: adminError } = await supabase.auth.getUser(token);
-      
-      console.log('Supabase admin auth result:', {
-        hasUser: !!adminUser,
-        userId: adminUser?.id,
-        email: adminUser?.email,
-        error: adminError?.message
+      logger.warn('Supabase client auth failed', { 
+        error: error?.message, 
+        tokenPreview: token.substring(0, 20),
+        status: error?.status 
       });
       
+      // If client validation fails, try with admin client
+      const { data: { user: adminUser }, error: adminError } = await supabase.auth.getUser(token);
+      
       if (adminError || !adminUser) {
+        logger.warn('Supabase admin auth failed', { 
+          error: adminError?.message, 
+          status: adminError?.status 
+        });
         // Both Supabase validations failed
         // Try to decode the JWT manually and validate against database
         console.log('Both Supabase validations failed, trying JWT decode...');
@@ -67,16 +62,16 @@ const protect = async (req, res, next) => {
           const payload = JSON.parse(Buffer.from(base64Payload, 'base64').toString());
           console.log('JWT payload:', { sub: payload.sub, email: payload.email });
           
-          if (payload.sub) {
-            // Check if user exists in database
+          if (payload.email) {
+            // Check if user exists in database by email (works for both Google and Supabase tokens if needed)
             const { data: profile, error: profileError } = await supabase
               .from('profiles')
               .select('id, email, name')
-              .eq('id', payload.sub)
-              .single();
+              .eq('email', payload.email)
+              .maybeSingle();
             
             if (!profileError && profile) {
-              console.log('User found in database:', profile.email);
+              console.log('User found in database by email:', profile.email);
               // User exists in database, allow the request
               req.user = {
                 id: profile.id,

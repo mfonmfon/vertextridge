@@ -1,6 +1,7 @@
 const { supabase, supabaseAdmin } = require('../config/supabase');
 const Logger = require('../utils/logger');
 const { asyncHandler } = require('../utils/errorHandler');
+const { ensureMasterTraderExists, MOCK_TRADERS } = require('./copyTradingController');
 
 const logger = new Logger('ADMIN_CONTROLLER');
 
@@ -606,15 +607,10 @@ exports.assignCopyTrader = asyncHandler(async (req, res) => {
     return res.status(400).json({ error: 'Master ID and allocated amount are required' });
   }
 
-  // Check if master trader exists
-  const { data: trader, error: traderError } = await supabaseAdmin
-    .from('master_traders')
-    .select('id, display_name')
-    .eq('id', masterId)
-    .single();
-
-  if (traderError || !trader) {
-    return res.status(404).json({ error: 'Master trader not found' });
+  // Ensure master trader exists (auto-seed if mock)
+  const exists = await ensureMasterTraderExists(masterId);
+  if (!exists) {
+    return res.status(404).json({ error: 'Master trader not found and could not be seeded' });
   }
 
   // Create relationship using supabaseAdmin to bypass user checks
@@ -660,12 +656,30 @@ exports.assignCopyTrader = asyncHandler(async (req, res) => {
  * Get all master traders (for management)
  */
 exports.getAllTraders = asyncHandler(async (req, res) => {
-  const { data, error } = await supabaseAdmin
+  let { data, error } = await supabaseAdmin
     .from('master_traders')
     .select('*')
     .order('created_at', { ascending: false });
 
   if (error) throw error;
+
+  // If no traders found, auto-seed mock traders
+  if (!data || data.length === 0) {
+    logger.info('No traders found in DB (Admin), auto-seeding mock traders');
+    const { error: seedError } = await supabaseAdmin
+      .from('master_traders')
+      .insert(MOCK_TRADERS);
+    
+    if (!seedError) {
+      // Re-fetch after seeding
+      const secondQuery = await supabaseAdmin
+        .from('master_traders')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      data = secondQuery.data;
+    }
+  }
 
   res.json({ traders: data || [] });
 });
@@ -687,7 +701,6 @@ exports.createTrader = asyncHandler(async (req, res) => {
     verified: traderData.verified === true,
     is_active: traderData.is_active !== false, // default to active
     total_trades: 0,
-    max_drawdown: parseFloat(traderData.max_drawdown || 0),
     min_copy_amount: parseFloat(traderData.min_copy_amount || 100),
     performance_fee: parseFloat(traderData.performance_fee || 15),
     specialization: Array.isArray(traderData.specialization) ? traderData.specialization : [],
@@ -718,6 +731,7 @@ exports.updateTrader = asyncHandler(async (req, res) => {
   // but for admin management we allow most fields.
   delete updates.id;
   delete updates.created_at;
+  delete updates.max_drawdown;
 
   const { data, error } = await supabaseAdmin
     .from('master_traders')

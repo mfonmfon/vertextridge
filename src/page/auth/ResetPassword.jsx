@@ -4,6 +4,7 @@ import { ArrowLeft, Lock, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import logo from '../../assets/logo.jpeg';
+import { supabase } from '../../config/supabase';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -37,29 +38,25 @@ const ResetPassword = () => {
     setLoading(true);
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${API_URL}/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password }),
+      // Use Supabase directly to update password
+      // This works because the recovery token is automatically handled by the Supabase client
+      // when landing from the email link.
+      const { data, error } = await supabase.auth.updateUser({
+        password: password
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        setSuccess(true);
-        toast.success('Password reset successfully!');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        toast.error(data.error || 'Failed to reset password');
+      if (error) {
+        throw error;
       }
+
+      setSuccess(true);
+      toast.success('Password reset successfully!');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (error) {
       console.error('Reset password error:', error);
-      toast.error('Something went wrong. Please try again.');
+      toast.error(error.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

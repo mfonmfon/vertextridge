@@ -20,7 +20,8 @@ class EmailService {
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS
-        }
+        },
+        family: 4 // Force IPv4 to avoid ENETUNREACH errors on some networks
       });
 
       logger.info('Email transporter initialized');
@@ -69,7 +70,7 @@ class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Welcome to Vertex Ridge! 🎉</h1>
+            <h1>Welcome to Vertex Ridge! </h1>
           </div>
           <div class="content">
             <h2>Hi ${user.name},</h2>
@@ -258,6 +259,56 @@ class EmailService {
       subject: `KYC Status Update: ${status.toUpperCase()}`,
       html,
       text: `Your KYC status has been updated to: ${status}`
+    });
+  }
+
+  async sendPasswordResetEmail(user, resetLink) {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #000; color: #fff; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .button { display: inline-block; padding: 12px 30px; background: #a3e635; color: #000; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }
+          .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+          .warning { font-size: 12px; color: #999; margin-top: 20px; border-top: 1px solid #eee; padding-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 style="color: #a3e635; margin: 0;">Vertex Ridge</h1>
+            <p style="margin: 5px 0 0;">Secure Account Recovery</p>
+          </div>
+          <div class="content">
+            <h2>Reset Your Password</h2>
+            <p>Hi ${user.name || 'Trader'},</p>
+            <p>We received a request to reset the password for your Vertex Ridge account. Click the button below to set a new password:</p>
+            <div style="text-align: center;">
+              <a href="${resetLink}" class="button">Reset Password</a>
+            </div>
+            <p>This link will expire in 24 hours. If you did not request this, you can safely ignore this email.</p>
+            <p><strong>The Vertex Ridge Security Team</strong></p>
+            <div class="warning">
+              <p>For your security, never share this link with anyone. Our support team will never ask for your password or reset link.</p>
+            </div>
+          </div>
+          <div class="footer">
+            <p>&copy; 2024 Vertex Ridge. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: user.email,
+      subject: 'Reset Your Vertex Ridge Password',
+      html,
+      text: `Hi, Please use this link to reset your password: ${resetLink}. This link expires in 24 hours.`
     });
   }
 }

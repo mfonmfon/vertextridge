@@ -392,7 +392,7 @@ exports.logout = asyncHandler(async (req, res) => {
 });
 
 /**
- * Forgot Password - Send reset email
+ * Forgot Password - Send reset email via custom SMTP
  */
 exports.forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -407,27 +407,56 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
   logger.audit('FORGOT_PASSWORD_REQUEST', { email });
 
   try {
-    // Use Supabase to send password reset email
-    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password`,
+    // 1. Check if user exists in profiles
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('name, email')
+      .eq('email', email)
+      .maybeSingle();
+
+    logger.debug('Profile search result', { email, found: !!profile });
+
+    // 2. Generate recovery link via Supabase Admin
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email: email,
+      options: {
+        redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password`,
+      }
     });
 
-    if (error) {
-      logger.warn('Password reset failed', { email, error: error.message });
-      // Don't reveal if email exists or not for security
-      return res.json({
-        message: 'If an account exists with this email, you will receive a password reset link shortly.',
-        code: 'RESET_EMAIL_SENT'
-      });
+    logger.debug('Link generation result', { email, success: !!linkData?.properties?.action_link });
+
+    if (linkError) {
+      logger.error('Failed to generate reset link', { email, error: linkError.message });
+      throw linkError;
     }
 
-    // Audit log (non-blocking)
+    // 3. Send custom email if user exists
+    if (profile && linkData?.properties?.action_link) {
+      logger.info('Sending custom password reset email', { email });
+      
+      const emailRes = await emailService.sendPasswordResetEmail(
+        { email, name: profile.name },
+        linkData.properties.action_link
+      );
+
+      if (!emailRes.success) {
+        logger.error('Failed to send reset email via SMTP', { email, error: emailRes.error });
+        // Fallback: Use standard Supabase email if SMTP fails
+        await supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password`,
+        });
+      }
+    }
+
+    // 4. Audit log (non-blocking)
     (async () => {
       try {
         await supabaseAdmin.from('audit_logs').insert({
           action: 'PASSWORD_RESET_REQUESTED',
           resource: 'auth',
-          details: { email },
+          details: { email, method: 'custom_smtp' },
           ip_address: req.ip,
           user_agent: req.get('user-agent')
         });
@@ -435,8 +464,6 @@ exports.forgotPassword = asyncHandler(async (req, res) => {
         logger.error('Failed to insert audit log', { error: err.message });
       }
     })();
-
-    logger.audit('PASSWORD_RESET_EMAIL_SENT', { email });
 
     res.json({
       message: 'If an account exists with this email, you will receive a password reset link shortly.',

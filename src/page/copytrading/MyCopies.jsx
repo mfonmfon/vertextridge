@@ -4,8 +4,10 @@ import { Users, TrendingUp, TrendingDown, X, AlertCircle, Loader2 } from 'lucide
 import { motion } from 'framer-motion';
 import { copyTradingService } from '../../services/copyTradingService';
 import { toast } from 'react-hot-toast';
+import { useUser } from '../../context/UserContext';
 
 const MyCopies = () => {
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState('active'); // active | history
   const [copyRelationships, setCopyRelationships] = useState([]);
   const [copiedTrades, setCopiedTrades] = useState([]);
@@ -20,8 +22,8 @@ const MyCopies = () => {
     try {
       setLoading(true);
       const [relationships, trades] = await Promise.all([
-        copyTradingService.getMyCopies(),
-        copyTradingService.getCopiedTrades()
+        copyTradingService.getMyCopies(user?.id),
+        copyTradingService.getCopiedTrades(user?.id)
       ]);
       setCopyRelationships(relationships);
       setCopiedTrades(trades);
@@ -38,7 +40,7 @@ const MyCopies = () => {
     
     try {
       setStoppingId(relationshipId);
-      await copyTradingService.stopCopying(relationshipId);
+      await copyTradingService.stopCopying(relationshipId, user?.id);
       toast.success(`Stopped copying ${traderName}`);
       await loadData();
     } catch (error) {

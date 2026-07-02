@@ -1,4 +1,8 @@
 require('dotenv').config();
+const dns = require('dns');
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -138,6 +142,7 @@ app.get('/api/debug/users', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // ═══════════════════════════════════════════════════════════════
 // ERROR HANDLING
