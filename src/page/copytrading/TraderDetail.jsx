@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Star, TrendingUp, Users, Award, Shield, DollarSign, Clock, Target } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Star, TrendingUp, Users, Award, Shield, DollarSign, Clock, Target, CheckCircle, Copy } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { copyTradingService } from '../../services/copyTradingService';
 import { useUser } from '../../context/UserContext';
@@ -22,6 +22,8 @@ const TraderDetail = () => {
     takeProfit: ''
   });
   const [copying, setCopying] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [copyDetails, setCopyDetails] = useState(null);
 
   useEffect(() => {
     fetchTraderDetails();
@@ -72,7 +74,16 @@ const TraderDetail = () => {
 
         toast.success(`Successfully started copying ${trader.display_name}!`);
         setShowCopyModal(false);
-        navigate('/copy-trading/my-copies');
+        // Show success modal with details
+        setCopyDetails({
+          traderName: trader.display_name,
+          amount: parseFloat(copyData.allocatedAmount),
+          copyPercentage: parseFloat(copyData.copyPercentage),
+          performanceFee: trader.performance_fee
+        });
+        setShowSuccessModal(true);
+        // Reset form
+        setCopyData({ allocatedAmount: '', copyPercentage: 100, stopLoss: '', takeProfit: '' });
       } catch (error) {
         console.error('Copy trading error:', error);
 
@@ -354,6 +365,103 @@ const TraderDetail = () => {
           </motion.div>
         </div>
       )}
+
+      {/* ─── Success Modal ─── */}
+      <AnimatePresence>
+        {showSuccessModal && copyDetails && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+              className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl"
+            >
+              {/* Animated checkmark circle */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.1, type: 'spring', stiffness: 260, damping: 18 }}
+                className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6"
+              >
+                <motion.div
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.25, type: 'spring', stiffness: 300, damping: 18 }}
+                >
+                  <CheckCircle className="w-14 h-14 text-green-500" strokeWidth={1.5} />
+                </motion.div>
+              </motion.div>
+
+              {/* Title */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <h2 className="text-2xl font-bold text-gray-900 mb-1">You're now copying!</h2>
+                <p className="text-gray-500 text-sm mb-6">
+                  Your account is now mirroring <span className="font-bold text-gray-800">{copyDetails.traderName}</span>'s trades
+                </p>
+              </motion.div>
+
+              {/* Summary Cards */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-gray-50 rounded-2xl p-4 mb-6 space-y-3 text-left"
+              >
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Allocated</span>
+                  <span className="text-sm font-bold text-gray-900">${copyDetails.amount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Copy Percentage</span>
+                  <span className="text-sm font-bold text-gray-900">{copyDetails.copyPercentage}%</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Performance Fee</span>
+                  <span className="text-sm font-bold text-gray-900">{copyDetails.performanceFee}%</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                  <span className="text-sm text-gray-500">Status</span>
+                  <span className="flex items-center gap-1.5 text-sm font-bold text-green-600">
+                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                    Active
+                  </span>
+                </div>
+              </motion.div>
+
+              {/* Buttons */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex flex-col gap-3"
+              >
+                <button
+                  onClick={() => { setShowSuccessModal(false); navigate('/copy-trading/my-copies'); }}
+                  className="w-full py-3.5 bg-black text-white font-bold rounded-2xl hover:bg-gray-800 transition-all"
+                >
+                  View My Copies
+                </button>
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="w-full py-3.5 text-gray-500 font-semibold hover:text-gray-800 transition-all text-sm"
+                >
+                  Stay on this page
+                </button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
