@@ -7,7 +7,7 @@ import { Toaster } from 'react-hot-toast';
 import Chatbot from './components/Chatbot';
 
 function App() {
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'placeholder-google-client-id';
 
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>

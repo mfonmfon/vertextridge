@@ -13,7 +13,6 @@ build/
 !.env.example
 server/.env
 server/.env.*
-!server/.env.example
 
 # ─── Logs ───────────────────────────────────────────────────────
 logs/

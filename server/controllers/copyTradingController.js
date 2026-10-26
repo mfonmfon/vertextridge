@@ -4,138 +4,26 @@ const { asyncHandler, ApiError } = require('../utils/errorHandler');
 
 const logger = new Logger('COPY_TRADING_CONTROLLER');
 
-const MOCK_TRADERS = [
-  {
-    display_name: 'CryptoKing',
-    bio: 'Professional trader with 5+ years experience in crypto markets. Specializing in swing trading and risk management.',
-    total_followers: 1250,
-    total_profit: 125000,
-    win_rate: 78.5,
-    risk_score: 4,
-    verified: true,
-    specialization: ['Bitcoin', 'Ethereum', 'DeFi'],
-    min_copy_amount: 100,
-    total_trades: 342,
-    avg_trade_duration: '2.5 days',
-    performance_fee: 20,
-    is_active: true
-  },
-  {
-    display_name: 'AltcoinMaster',
-    bio: 'Focused on discovering and trading promising altcoins before they moon. High risk, high reward strategy.',
-    total_followers: 890,
-    total_profit: 89000,
-    win_rate: 65.2,
-    risk_score: 7,
-    verified: true,
-    specialization: ['Altcoins', 'Small Cap', 'Gems'],
-    min_copy_amount: 250,
-    total_trades: 156,
-    avg_trade_duration: '5.2 days',
-    performance_fee: 25,
-    is_active: true
-  },
-  {
-    display_name: 'SafeTrader',
-    bio: 'Conservative trading approach with focus on capital preservation and steady growth.',
-    total_followers: 2100,
-    total_profit: 67000,
-    win_rate: 85.3,
-    risk_score: 2,
-    verified: true,
-    specialization: ['Bitcoin', 'Stablecoins', 'Conservative'],
-    min_copy_amount: 50,
-    total_trades: 89,
-    avg_trade_duration: '12.3 days',
-    performance_fee: 15,
-    is_active: true
-  },
-  {
-    display_name: 'DeFiExpert',
-    bio: 'DeFi protocol specialist. Trading governance tokens and yield farming opportunities.',
-    total_followers: 675,
-    total_profit: 156000,
-    win_rate: 72.1,
-    risk_score: 5,
-    verified: false,
-    specialization: ['DeFi', 'Governance', 'Yield'],
-    min_copy_amount: 500,
-    total_trades: 234,
-    avg_trade_duration: '3.8 days',
-    max_drawdown: 18.7,
-    performance_fee: 30,
-    is_active: true
-  },
-  {
-    id: '5',
-    display_name: 'TechAnalyst',
-    bio: 'Pure technical analysis trader. Using advanced charting and indicators for precise entries.',
-    total_followers: 1450,
-    total_profit: 98000,
-    win_rate: 69.8,
-    risk_score: 6,
-    verified: true,
-    specialization: ['Technical Analysis', 'Scalping', 'Momentum'],
-    min_copy_amount: 200,
-    total_trades: 567,
-    avg_trade_duration: '1.2 days',
-    performance_fee: 22,
-    is_active: true
-  },
-  {
-    display_name: 'HODLStrategy',
-    bio: 'Long-term investment strategy focusing on fundamentally strong projects.',
-    total_followers: 3200,
-    total_profit: 234000,
-    win_rate: 91.2,
-    risk_score: 1,
-    verified: true,
-    specialization: ['Long-term', 'Fundamentals', 'Blue Chip'],
-    min_copy_amount: 100,
-    total_trades: 45,
-    avg_trade_duration: '45.6 days',
-    performance_fee: 10,
-    is_active: true
-  }
-];
-
 /**
- * Ensures a master trader exists in the database.
- * If not, and it's a mock ID, creates it.
+ * Master traders are created by the admin in the admin panel.
+ * Returns the trader row if it exists, otherwise null.
  */
-const ensureMasterTraderExists = async (masterId) => {
-  try {
-    const { data: existing, error } = await supabase
-      .from('master_traders')
-      .select('id')
-      .eq('id', masterId)
-      .maybeSingle();
+const getTraderById = async (masterId) => {
+  const { data, error } = await supabaseAdmin
+    .from('master_traders')
+    .select('id, display_name, is_active, min_copy_amount, total_followers')
+    .eq('id', masterId)
+    .maybeSingle();
 
-    if (existing) return true;
-
-    // If not found, check if it's a mock trader
-    const mockData = MOCK_TRADERS.find(t => t.id === masterId);
-    if (mockData) {
-      logger.info('Auto-seeding mock trader:', { masterId, name: mockData.display_name });
-      const { error: insertError } = await supabase
-        .from('master_traders')
-        .insert(mockData);
-      
-      if (insertError) {
-        logger.error('Failed to auto-seed mock trader:', insertError);
-        return false;
-      }
-      return true;
-    }
-
-    return false;
-  } catch (err) {
-    logger.error('Error in ensureMasterTraderExists:', err);
-    return false;
+  if (error) {
+    logger.error('Error fetching master trader:', error);
+    return null;
   }
+  return data;
 };
 
-exports.MOCK_TRADERS = MOCK_TRADERS;
+const ensureMasterTraderExists = async (masterId) => !!(await getTraderById(masterId));
+
 exports.ensureMasterTraderExists = ensureMasterTraderExists;
 
 /**
@@ -146,7 +34,7 @@ exports.getMasterTraders = asyncHandler(async (req, res) => {
 
   let query = supabase
     .from('master_traders')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('is_active', true);
 
   // Apply sorting
@@ -164,32 +52,11 @@ exports.getMasterTraders = asyncHandler(async (req, res) => {
       query = query.order('total_followers', { ascending: false });
   }
 
-  query = query.range(offset, offset + limit - 1);
+  query = query.range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1);
 
-  let { data, error, count } = await query;
+  const { data, error, count } = await query;
 
   if (error) throw error;
-
-  // If no traders found, auto-seed mock traders
-  if (!data || data.length === 0) {
-    logger.info('No traders found in DB, auto-seeding mock traders');
-    const { error: seedError } = await supabase
-      .from('master_traders')
-      .insert(MOCK_TRADERS);
-    
-    if (!seedError) {
-      // Re-fetch after seeding
-      const secondQuery = await supabase
-        .from('master_traders')
-        .select('*')
-        .eq('is_active', true)
-        .order('total_followers', { ascending: false })
-        .range(offset, offset + limit - 1);
-      
-      data = secondQuery.data;
-      count = secondQuery.count;
-    }
-  }
 
   res.json({
     traders: data || [],
@@ -256,11 +123,15 @@ exports.startCopying = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Minimum copy amount is $1', 'AMOUNT_TOO_LOW');
   }
 
-  // Ensure master trader exists (auto-seed if mock)
-  const exists = await ensureMasterTraderExists(masterId);
-  if (!exists) {
-    logger.warn('Master trader not found and could not be seeded', { masterId });
+  const trader = await getTraderById(masterId);
+  if (!trader || !trader.is_active) {
+    logger.warn('Master trader not found or inactive', { masterId });
     throw new ApiError(404, 'Master trader not found', 'NOT_FOUND');
+  }
+
+  const minAmount = parseFloat(trader.min_copy_amount || 0);
+  if (parseFloat(allocatedAmount) < minAmount) {
+    throw new ApiError(400, `Minimum copy amount is $${minAmount}`, 'AMOUNT_TOO_LOW');
   }
 
   // Check user balance
@@ -282,13 +153,12 @@ exports.startCopying = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Insufficient balance', 'INSUFFICIENT_FUNDS');
   }
 
-  // Check if already copying this trader
+  // Check for an existing relationship with this trader (one row per user/trader pair)
   const { data: existing, error: existingError } = await supabaseAdmin
     .from('copy_relationships')
-    .select('id')
+    .select('id, status')
     .eq('copier_id', userId)
     .eq('master_id', masterId)
-    .eq('status', 'active')
     .maybeSingle();
 
   if (existingError) {
@@ -297,7 +167,7 @@ exports.startCopying = asyncHandler(async (req, res) => {
     throw existingError;
   }
 
-  if (existing) {
+  if (existing && existing.status !== 'stopped') {
     throw new ApiError(400, 'Already copying this trader', 'ALREADY_COPYING');
   }
 
@@ -313,22 +183,31 @@ exports.startCopying = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Failed to allocate funds', 'BALANCE_UPDATE_FAILED');
   }
 
-  // Create copy relationship
-  logger.info('DEBUG: Creating copy relationship', { userId, masterId, allocatedAmount });
-  const { data: relationship, error: relationshipError } = await supabaseAdmin
-    .from('copy_relationships')
-    .insert({
-      copier_id: userId,
-      master_id: masterId,
-      allocated_amount: allocatedAmount,
-      copy_percentage: copyPercentage,
-      stop_loss_percentage: stopLoss,
-      take_profit_percentage: takeProfit,
-      status: 'active'
-    })
-    .select()
-    .single();
-  logger.info('DEBUG: Relationship insert complete', { error: relationshipError?.code });
+  // Create copy relationship, or restart a previously stopped one
+  const relationshipFields = {
+    allocated_amount: allocatedAmount,
+    copy_percentage: copyPercentage,
+    stop_loss_percentage: stopLoss,
+    take_profit_percentage: takeProfit,
+    status: 'active'
+  };
+
+  const relationshipQuery = existing
+    ? supabaseAdmin
+        .from('copy_relationships')
+        .update({
+          ...relationshipFields,
+          total_copied_trades: 0,
+          total_profit: 0,
+          started_at: new Date().toISOString(),
+          stopped_at: null
+        })
+        .eq('id', existing.id)
+    : supabaseAdmin
+        .from('copy_relationships')
+        .insert({ copier_id: userId, master_id: masterId, ...relationshipFields });
+
+  const { data: relationship, error: relationshipError } = await relationshipQuery.select().single();
 
   if (relationshipError) {
     logger.error('Error creating copy relationship:', relationshipError);
@@ -342,25 +221,12 @@ exports.startCopying = asyncHandler(async (req, res) => {
   }
 
   // Update master trader followers count
-  logger.info('DEBUG: Fetching master trader followers', { masterId });
-  const { data: currentTrader, error: followerSelectError } = await supabaseAdmin
-    .from('master_traders')
-    .select('total_followers')
-    .eq('id', masterId)
-    .single();
-  logger.info('DEBUG: Follower select complete', { error: followerSelectError?.code });
-  if (followerSelectError) {
-    followerSelectError.context = 'followerSelect';
-    throw followerSelectError;
-  }
-    
-  const { data: updatedTrader, error: followerError } = await supabaseAdmin
+  const { error: followerError } = await supabaseAdmin
     .from('master_traders')
     .update({
-      total_followers: (currentTrader?.total_followers || 0) + 1
+      total_followers: (trader.total_followers || 0) + 1
     })
-    .eq('id', masterId)
-    .select();
+    .eq('id', masterId);
 
   if (followerError) {
     logger.warn('Failed to update follower count:', followerError);
@@ -460,10 +326,11 @@ exports.stopCopying = asyncHandler(async (req, res) => {
   }
 
   // Update master trader followers count
-  const { error: followerError } = await supabase
+  const masterTrader = await getTraderById(relationship.master_id);
+  const { error: followerError } = await supabaseAdmin
     .from('master_traders')
     .update({
-      total_followers: supabase.raw('GREATEST(total_followers - 1, 0)')
+      total_followers: Math.max((masterTrader?.total_followers || 0) - 1, 0)
     })
     .eq('id', relationship.master_id);
 
